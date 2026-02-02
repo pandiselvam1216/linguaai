@@ -1,0 +1,260 @@
+import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import {
+    Headphones, Mic, BookOpen, Edit3, CheckSquare, Book, Brain,
+    TrendingUp, Award, Target, Clock, ArrowRight
+} from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import {
+    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+} from 'recharts'
+
+const modules = [
+    { path: '/listening', icon: Headphones, title: 'Listening', desc: 'Audio comprehension', color: '#3B82F6', bg: '#EFF6FF' },
+    { path: '/speaking', icon: Mic, title: 'Speaking', desc: 'Pronunciation & fluency', color: '#10B981', bg: '#ECFDF5' },
+    { path: '/reading', icon: BookOpen, title: 'Reading', desc: 'Text comprehension', color: '#8B5CF6', bg: '#F5F3FF' },
+    { path: '/writing', icon: Edit3, title: 'Writing', desc: 'Essay & grammar', color: '#F59E0B', bg: '#FFFBEB' },
+    { path: '/grammar', icon: CheckSquare, title: 'Grammar', desc: 'Rules & exercises', color: '#EF4444', bg: '#FEF2F2' },
+    { path: '/vocabulary', icon: Book, title: 'Vocabulary', desc: 'Word building', color: '#6366F1', bg: '#EEF2FF' },
+    { path: '/critical-thinking', icon: Brain, title: 'Critical Thinking', desc: 'JAM sessions', color: '#EC4899', bg: '#FDF2F8' },
+]
+
+const stats = [
+    { icon: TrendingUp, label: 'Overall Progress', value: '68%', color: '#3B82F6', bg: '#EFF6FF' },
+    { icon: Award, label: 'Lessons Completed', value: '24', color: '#10B981', bg: '#ECFDF5' },
+    { icon: Target, label: 'Current Streak', value: '7 days', color: '#F59E0B', bg: '#FFFBEB' },
+    { icon: Clock, label: 'Time Spent', value: '12.5 hrs', color: '#8B5CF6', bg: '#F5F3FF' },
+]
+
+const chartData = [
+    { day: 'Mon', score: 65 }, { day: 'Tue', score: 72 }, { day: 'Wed', score: 68 },
+    { day: 'Thu', score: 78 }, { day: 'Fri', score: 82 }, { day: 'Sat', score: 85 }, { day: 'Sun', score: 80 },
+]
+
+export default function Dashboard() {
+    const { user } = useAuth()
+
+    return (
+        <div style={{ padding: '24px', backgroundColor: '#F9FAFB', minHeight: '100vh' }}>
+            <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+                {/* Header */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{ marginBottom: '32px' }}
+                >
+                    <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#111827', marginBottom: '8px' }}>
+                        Welcome back, {user?.full_name || 'Student'}! 👋
+                    </h1>
+                    <p style={{ fontSize: '16px', color: '#6B7280' }}>
+                        Continue your learning journey where you left off
+                    </p>
+                </motion.div>
+
+                {/* Stats Grid */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(4, 1fr)',
+                        gap: '20px',
+                        marginBottom: '32px',
+                    }}
+                >
+                    {stats.map((stat, i) => (
+                        <div
+                            key={i}
+                            style={{
+                                backgroundColor: '#FFFFFF',
+                                borderRadius: '16px',
+                                padding: '24px',
+                                border: '1px solid #E5E7EB',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '16px',
+                            }}
+                        >
+                            <div style={{
+                                width: '48px',
+                                height: '48px',
+                                borderRadius: '12px',
+                                backgroundColor: stat.bg,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}>
+                                <stat.icon size={24} style={{ color: stat.color }} />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '24px', fontWeight: '700', color: '#111827' }}>{stat.value}</div>
+                                <div style={{ fontSize: '13px', color: '#6B7280' }}>{stat.label}</div>
+                            </div>
+                        </div>
+                    ))}
+                </motion.div>
+
+                {/* Chart and Quick Actions */}
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '32px' }}>
+                    {/* Chart */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        style={{
+                            backgroundColor: '#FFFFFF',
+                            borderRadius: '16px',
+                            padding: '24px',
+                            border: '1px solid #E5E7EB',
+                        }}
+                    >
+                        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '20px' }}>
+                            Weekly Progress
+                        </h3>
+                        <ResponsiveContainer width="100%" height={250}>
+                            <LineChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                <XAxis dataKey="day" stroke="#6B7280" fontSize={12} />
+                                <YAxis stroke="#6B7280" fontSize={12} />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: '#FFFFFF',
+                                        border: '1px solid #E5E7EB',
+                                        borderRadius: '8px'
+                                    }}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="score"
+                                    stroke="#1A73E8"
+                                    strokeWidth={3}
+                                    dot={{ fill: '#1A73E8', r: 4 }}
+                                    activeDot={{ r: 6, fill: '#1A73E8' }}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </motion.div>
+
+                    {/* Quick Actions */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        style={{
+                            backgroundColor: '#FFFFFF',
+                            borderRadius: '16px',
+                            padding: '24px',
+                            border: '1px solid #E5E7EB',
+                        }}
+                    >
+                        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '20px' }}>
+                            Quick Actions
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <Link to="/speaking" style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '16px',
+                                borderRadius: '12px',
+                                backgroundColor: '#ECFDF5',
+                                textDecoration: 'none',
+                                border: '1px solid #D1FAE5',
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <Mic size={20} style={{ color: '#10B981' }} />
+                                    <span style={{ fontWeight: '500', color: '#111827' }}>Practice Speaking</span>
+                                </div>
+                                <ArrowRight size={18} style={{ color: '#10B981' }} />
+                            </Link>
+                            <Link to="/grammar" style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '16px',
+                                borderRadius: '12px',
+                                backgroundColor: '#FEF2F2',
+                                textDecoration: 'none',
+                                border: '1px solid #FECACA',
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <CheckSquare size={20} style={{ color: '#EF4444' }} />
+                                    <span style={{ fontWeight: '500', color: '#111827' }}>Grammar Quiz</span>
+                                </div>
+                                <ArrowRight size={18} style={{ color: '#EF4444' }} />
+                            </Link>
+                            <Link to="/vocabulary" style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '16px',
+                                borderRadius: '12px',
+                                backgroundColor: '#EEF2FF',
+                                textDecoration: 'none',
+                                border: '1px solid #C7D2FE',
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <Book size={20} style={{ color: '#6366F1' }} />
+                                    <span style={{ fontWeight: '500', color: '#111827' }}>Learn Words</span>
+                                </div>
+                                <ArrowRight size={18} style={{ color: '#6366F1' }} />
+                            </Link>
+                        </div>
+                    </motion.div>
+                </div>
+
+                {/* Learning Modules */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                >
+                    <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#111827', marginBottom: '20px' }}>
+                        Learning Modules
+                    </h3>
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(7, 1fr)',
+                        gap: '16px',
+                    }}>
+                        {modules.map((mod, i) => (
+                            <Link
+                                key={i}
+                                to={mod.path}
+                                style={{
+                                    backgroundColor: '#FFFFFF',
+                                    borderRadius: '16px',
+                                    padding: '24px 16px',
+                                    border: '1px solid #E5E7EB',
+                                    textAlign: 'center',
+                                    textDecoration: 'none',
+                                    transition: 'all 0.2s ease',
+                                }}
+                            >
+                                <div style={{
+                                    width: '56px',
+                                    height: '56px',
+                                    borderRadius: '14px',
+                                    backgroundColor: mod.bg,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    margin: '0 auto 16px',
+                                }}>
+                                    <mod.icon size={28} style={{ color: mod.color }} />
+                                </div>
+                                <div style={{ fontSize: '14px', fontWeight: '600', color: '#111827', marginBottom: '4px' }}>
+                                    {mod.title}
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#9CA3AF' }}>
+                                    {mod.desc}
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                </motion.div>
+            </div>
+        </div>
+    )
+}
