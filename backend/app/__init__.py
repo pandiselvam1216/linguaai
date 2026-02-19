@@ -32,7 +32,10 @@ def create_app(config_name=None):
     # Initialize extensions
     db.init_app(app)
     jwt.init_app(app)
-    CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "http://localhost:3000"]}}, supports_credentials=True)
+    # CORS Configuration
+    # Allow specific origins from environment variable, or default to localhost for development
+    cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:5173,http://localhost:3000').split(',')
+    CORS(app, resources={r"/api/*": {"origins": cors_origins}}, supports_credentials=True)
     
     # JWT error handlers
     @jwt.invalid_token_loader
