@@ -315,91 +315,69 @@ export default function Speaking() {
                         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                         textAlign: 'center',
                     }}>
-                        {/* Circular Timer */}
+                        {/* Timer + Mic — side by side */}
                         <div style={{
-                            position: 'relative',
-                            width: '120px',
-                            height: '120px',
-                            margin: '0 auto 24px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '32px',
+                            marginBottom: '20px',
                         }}>
-                            <svg width="120" height="120" style={{ transform: 'rotate(-90deg)' }}>
-                                <circle
-                                    cx="60"
-                                    cy="60"
-                                    r="54"
-                                    stroke="#E5E7EB"
-                                    strokeWidth="8"
-                                    fill="none"
-                                />
-                                <circle
-                                    cx="60"
-                                    cy="60"
-                                    r="54"
-                                    stroke={isRecording ? '#22C55E' : '#3B82F6'}
-                                    strokeWidth="8"
-                                    fill="none"
-                                    strokeDasharray={`${2 * Math.PI * 54}`}
-                                    strokeDashoffset={`${2 * Math.PI * 54 * (1 - timeProgress / 100)}`}
-                                    strokeLinecap="round"
-                                    style={{ transition: 'stroke-dashoffset 1s linear' }}
-                                />
-                            </svg>
-                            <div style={{
-                                position: 'absolute',
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)',
-                                textAlign: 'center',
-                            }}>
-                                <p style={{
-                                    fontSize: '28px',
-                                    fontWeight: '700',
-                                    color: '#111827',
-                                    margin: 0,
-                                    fontFamily: 'monospace',
+                            {/* Circular Timer */}
+                            <div style={{ position: 'relative', width: '120px', height: '120px', flexShrink: 0 }}>
+                                <svg width="120" height="120" style={{ transform: 'rotate(-90deg)' }}>
+                                    <circle cx="60" cy="60" r="54" stroke="#E5E7EB" strokeWidth="8" fill="none" />
+                                    <circle
+                                        cx="60" cy="60" r="54"
+                                        stroke={isRecording ? '#22C55E' : '#3B82F6'}
+                                        strokeWidth="8" fill="none"
+                                        strokeDasharray={`${2 * Math.PI * 54}`}
+                                        strokeDashoffset={`${2 * Math.PI * 54 * (1 - timeProgress / 100)}`}
+                                        strokeLinecap="round"
+                                        style={{ transition: 'stroke-dashoffset 1s linear' }}
+                                    />
+                                </svg>
+                                <div style={{
+                                    position: 'absolute', top: '50%', left: '50%',
+                                    transform: 'translate(-50%, -50%)', textAlign: 'center',
                                 }}>
-                                    {formatTime(timeLeft)}
+                                    <p style={{ fontSize: '28px', fontWeight: '700', color: '#111827', margin: 0, fontFamily: 'monospace' }}>
+                                        {formatTime(timeLeft)}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Divider */}
+                            <div style={{ width: '1px', height: '80px', backgroundColor: '#E5E7EB' }} />
+
+                            {/* Microphone Button */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                                <motion.button
+                                    onClick={isRecording ? stopRecording : startRecording}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    animate={isRecording ? {
+                                        boxShadow: ['0 0 0 0 rgba(34,197,94,0.4)', '0 0 0 20px rgba(34,197,94,0)', '0 0 0 0 rgba(34,197,94,0.4)']
+                                    } : {}}
+                                    transition={isRecording ? { duration: 1.5, repeat: Infinity } : {}}
+                                    style={{
+                                        width: '80px', height: '80px', borderRadius: '50%', border: 'none',
+                                        background: isRecording
+                                            ? 'linear-gradient(135deg, #EF4444 0%, #F87171 100%)'
+                                            : 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
+                                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+                                    }}
+                                >
+                                    {isRecording ? <MicOff size={32} style={{ color: 'white' }} /> : <Mic size={32} style={{ color: 'white' }} />}
+                                </motion.button>
+                                <p style={{ fontSize: '13px', color: '#6B7280', margin: 0, fontWeight: '500' }}>
+                                    {isRecording ? 'Tap to stop' : 'Tap to speak'}
                                 </p>
                             </div>
                         </div>
 
-                        {/* Microphone Button */}
-                        <motion.button
-                            onClick={isRecording ? stopRecording : startRecording}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            animate={isRecording ? {
-                                boxShadow: ['0 0 0 0 rgba(34, 197, 94, 0.4)', '0 0 0 20px rgba(34, 197, 94, 0)', '0 0 0 0 rgba(34, 197, 94, 0.4)']
-                            } : {}}
-                            transition={isRecording ? { duration: 1.5, repeat: Infinity } : {}}
-                            style={{
-                                width: '80px',
-                                height: '80px',
-                                borderRadius: '50%',
-                                border: 'none',
-                                background: isRecording
-                                    ? 'linear-gradient(135deg, #EF4444 0%, #F87171 100%)'
-                                    : 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginBottom: '16px',
-                                boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
-                            }}
-                        >
-                            {isRecording ? (
-                                <MicOff size={32} style={{ color: 'white' }} />
-                            ) : (
-                                <Mic size={32} style={{ color: 'white' }} />
-                            )}
-                        </motion.button>
-
-                        <p style={{
-                            fontSize: '14px',
-                            color: '#6B7280',
-                            marginBottom: '24px',
-                        }}>
+                        <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '24px' }}>
                             {isRecording ? 'Recording... Click to stop' : 'Click the microphone to start speaking'}
                         </p>
 

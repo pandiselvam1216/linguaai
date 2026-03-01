@@ -624,17 +624,26 @@ export default function Vocabulary() {
         fetchSavedWords()
     }, [])
 
+    // ── localStorage helpers for offline persistence ──────────────────────────
+    const LS_KEY = 'lingua_saved_words'
+    const lsGetWords = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]') } catch { return [] } }
+    const lsSaveWords = (words) => localStorage.setItem(LS_KEY, JSON.stringify(words))
+
     const fetchSavedWords = async () => {
         try {
             const res = await api.get('/vocabulary/saved')
-            setSavedWords(res.data.words || [])
+            const words = res.data.words || []
+            setSavedWords(words)
+            lsSaveWords(words) // keep localStorage in sync
         } catch (error) {
-            console.error('Failed to fetch saved words:', error)
+            // Backend unavailable — fall back to localStorage
+            setSavedWords(lsGetWords())
         } finally {
             setLoading(false)
         }
     }
 
+    // ── Search: calls Free Dictionary API directly from the browser ────────────
     const handleSearch = async (e) => {
         e.preventDefault()
         if (!searchWord.trim()) return
@@ -644,38 +653,70 @@ export default function Vocabulary() {
         setActiveTab('search')
 
         try {
-            const res = await api.get(`/vocabulary/search?word=${encodeURIComponent(searchWord)}`)
-            setSearchResult(res.data)
+            const res = await fetch(
+                `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(searchWord.trim().toLowerCase())}`
+            )
+            if (!res.ok) { setSearchResult({ error: 'Word not found' }); return }
+            const data = await res.json()
+            const entry = Array.isArray(data) ? data[0] : null
+            if (!entry) { setSearchResult({ error: 'Word not found' }); return }
+
+            // Extract phonetics
+            let phonetic = '', audio_url = ''
+            for (const p of entry.phonetics || []) {
+                if (p.text) phonetic = p.text
+                if (p.audio) audio_url = p.audio
+                if (phonetic && audio_url) break
+            }
+
+            // Extract meanings (up to 3 definitions each)
+            const meanings = (entry.meanings || []).map(m => ({
+                part_of_speech: m.partOfSpeech || '',
+                definitions: (m.definitions || []).slice(0, 3).map(d => ({
+                    definition: d.definition || '',
+                    example: d.example || '',
+                    synonyms: (d.synonyms || []).slice(0, 5),
+                    antonyms: (d.antonyms || []).slice(0, 5)
+                })),
+                synonyms: (m.synonyms || []).slice(0, 10),
+                antonyms: (m.antonyms || []).slice(0, 10)
+            }))
+
+            setSearchResult({
+                success: true,
+                word: entry.word || searchWord,
+                phonetic,
+                audio_url,
+                meanings,
+                source_urls: entry.sourceUrls || []
+            })
         } catch (error) {
-            setSearchResult({ error: 'Word not found' })
+            setSearchResult({ error: 'Unable to reach dictionary. Check your internet connection.' })
         } finally {
             setSearching(false)
         }
     }
 
     const saveWord = async (word) => {
-        try {
-            await api.post('/vocabulary/saved', { word })
-            const newSavedWord = {
-                id: Date.now(),
-                word: searchResult.word,
-                definition: searchResult.meanings?.[0]?.definitions?.[0]?.definition,
-                part_of_speech: searchResult.meanings?.[0]?.part_of_speech
-            }
-            setSavedWords([newSavedWord, ...savedWords])
-            fetchSavedWords()
-        } catch (error) {
-            console.error('Failed to save word:', error)
+        const newSavedWord = {
+            id: Date.now(),
+            word: searchResult.word,
+            definition: searchResult.meanings?.[0]?.definitions?.[0]?.definition || '',
+            part_of_speech: searchResult.meanings?.[0]?.part_of_speech || ''
         }
+        // Optimistic update
+        const updated = [newSavedWord, ...savedWords.filter(w => w.word !== newSavedWord.word)]
+        setSavedWords(updated)
+        lsSaveWords(updated)
+        // Try to persist to backend too
+        try { await api.post('/vocabulary/saved', { word }) } catch { /* backend optional */ }
     }
 
     const deleteWord = async (wordId) => {
-        try {
-            await api.delete(`/vocabulary/saved/${wordId}`)
-            setSavedWords(savedWords.filter(w => w.id !== wordId))
-        } catch (error) {
-            console.error('Failed to delete word:', error)
-        }
+        const updated = savedWords.filter(w => w.id !== wordId)
+        setSavedWords(updated)
+        lsSaveWords(updated)
+        try { await api.delete(`/vocabulary/saved/${wordId}`) } catch { /* backend optional */ }
     }
 
     const playAudio = (url) => {
