@@ -10,7 +10,7 @@ import {
 } from 'recharts'
 import { useState, useEffect } from 'react'
 import { fetchDashboardStats } from '../services/supabaseService'
-import { getLocalState } from '../utils/localScoring'
+import { getLocalState, checkAndIncrementStreak } from '../utils/localScoring'
 
 const modules = [
     { path: '/listening', icon: Headphones, title: 'Listening', desc: 'Audio comprehension', color: '#3B82F6', bg: '#EFF6FF' },
@@ -34,10 +34,13 @@ export default function Dashboard() {
 
     const loadStats = async () => {
         try {
+            // Check streak first and update local state
+            const updatedMetrics = checkAndIncrementStreak();
+
             // Try Supabase first, fall back to local
             const supabaseStats = await fetchDashboardStats()
             if (supabaseStats.modulesCompleted > 0) {
-                setStats(supabaseStats)
+                setStats({ ...supabaseStats, streakDays: supabaseStats.streakDays || updatedMetrics.streakDays })
                 setChartData(supabaseStats.chartData)
             } else {
                 // Fall back to localStorage
@@ -64,12 +67,12 @@ export default function Dashboard() {
             value: stats ? `${stats.modulesCompleted || 0}` : '—'
         },
         {
-            icon: Target, label: 'Speaking Avg', color: '#F59E0B', bg: '#FFFBEB',
-            value: stats ? `${stats.speakingAvg || stats.streakDays || 0}` : '—'
+            icon: Target, label: 'Daily Streak', color: '#F59E0B', bg: '#FFFBEB',
+            value: stats ? `${stats.streakDays || 0} 🔥` : '—'
         },
         {
-            icon: Clock, label: 'Writing Avg', color: '#8B5CF6', bg: '#F5F3FF',
-            value: stats ? `${stats.writingAvg || stats.timeSpentMinutes || 0}` : '—'
+            icon: Clock, label: 'Time Spent', color: '#8B5CF6', bg: '#F5F3FF',
+            value: stats ? `${stats.timeSpentMinutes || 0}m` : '—'
         },
     ]
 

@@ -43,7 +43,44 @@ export const saveLocalState = (state) => {
     }
 };
 
-const updateMetrics = (type, score, timeSpent) => {
+export const checkAndIncrementStreak = () => {
+    const state = getLocalState();
+    const now = new Date();
+    const todayStr = now.toDateString();
+
+    // Initialize if missing
+    if (!state.metrics.lastLoginDate) {
+        state.metrics.streakDays = 1;
+        state.metrics.lastLoginDate = todayStr;
+        saveLocalState(state);
+        return state.metrics;
+    }
+
+    if (state.metrics.lastLoginDate !== todayStr) {
+        const lastLogin = new Date(state.metrics.lastLoginDate);
+        // Reset time to midnight for accurate day comparison
+        lastLogin.setHours(0, 0, 0, 0);
+        const today = new Date(now);
+        today.setHours(0, 0, 0, 0);
+
+        const diffTime = Math.abs(today - lastLogin);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) {
+            // Consecutive day
+            state.metrics.streakDays += 1;
+        } else if (diffDays > 1) {
+            // Missed a day
+            state.metrics.streakDays = 1;
+        }
+
+        state.metrics.lastLoginDate = todayStr;
+        saveLocalState(state);
+    }
+    return state.metrics;
+};
+
+export const saveModuleScore = (type, score, timeSpent = 0) => {
     const state = getLocalState();
 
     // Update generic metrics
@@ -58,22 +95,23 @@ const updateMetrics = (type, score, timeSpent) => {
         type: type
     };
 
+    if (!state.history) state.history = []; // Initialize global history if missing
+    state.history.push(entry);
+
     if (type === 'speaking') {
         state.speakingHistory.push(entry);
     } else if (type === 'writing') {
         state.writingHistory.push(entry);
     }
 
-    // Recalculate Overall Score (Weighted Average)
-    const speakingAvg = state.speakingHistory.reduce((acc, curr) => acc + curr.score, 0) / (state.speakingHistory.length || 1);
-    const writingAvg = state.writingHistory.reduce((acc, curr) => acc + curr.score, 0) / (state.writingHistory.length || 1);
+    // Recalculate Overall Score (Average of all modules)
+    const allScores = state.history && state.history.length > 0
+        ? state.history
+        : [...state.speakingHistory, ...state.writingHistory];
 
-    // Simple average for now
-    let divider = 0;
-    if (state.speakingHistory.length > 0) divider++;
-    if (state.writingHistory.length > 0) divider++;
-
-    state.metrics.overallScore = Math.round((speakingAvg + writingAvg) / (divider || 1));
+    if (allScores.length > 0) {
+        state.metrics.overallScore = Math.round(allScores.reduce((acc, curr) => acc + curr.score, 0) / allScores.length);
+    }
 
     // Update Chart Data (Daily)
     const today = new Date().toLocaleDateString('en-US', { weekday: 'short' });
@@ -129,7 +167,7 @@ export const evaluateSpeaking = (transcript, timeElapsed, targetText = "") => {
     };
 
     // Save
-    updateMetrics('speaking', finalScore, timeElapsed);
+    saveModuleScore('speaking', finalScore, timeElapsed);
 
     return {
         success: true,
@@ -183,7 +221,7 @@ export const evaluateWriting = async (text, timeElapsed) => {
         };
 
         // Save
-        updateMetrics('writing', score, timeElapsed);
+        saveModuleScore('writing', score, timeElapsed);
 
         return {
             success: true,
@@ -196,7 +234,7 @@ export const evaluateWriting = async (text, timeElapsed) => {
         console.error("LanguageTool API failed", error);
         // Fallback mock
         const fallbackScore = 85;
-        updateMetrics('writing', fallbackScore, timeElapsed);
+        saveModuleScore('writing', fallbackScore, timeElapsed);
         return {
             success: true,
             score: fallbackScore,

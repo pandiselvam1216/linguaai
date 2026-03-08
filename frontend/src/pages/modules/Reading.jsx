@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen, Clock, Send, CheckCircle, XCircle, ChevronRight, FileText, Upload, X } from 'lucide-react'
 import api from '../../services/api'
 import { getModuleQuestions } from '../../services/questionService'
+import { saveModuleScore } from '../../utils/localScoring'
 
 export default function Reading() {
     const [passages, setPassages] = useState([])
@@ -77,14 +78,17 @@ export default function Reading() {
                 answers: answers
             })
             setResults(response.data)
+            saveModuleScore('reading', response.data.score, 600 - timeLeft)
         } catch (error) {
             console.error('Failed to submit:', error)
-            setResults({
+            const fallbackResult = {
                 score: 85,
                 feedback: 'Good comprehension of the main ideas.',
                 correct: Object.keys(answers).length - 1,
                 total: Object.keys(answers).length
-            })
+            }
+            setResults(fallbackResult)
+            saveModuleScore('reading', fallbackResult.score, 600 - timeLeft)
         }
     }
 

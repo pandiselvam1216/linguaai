@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckSquare, Star, ChevronRight, Award, RefreshCw, Check, X } from 'lucide-react'
 import { getModuleQuestions } from '../../services/questionService'
+import { saveModuleScore } from '../../utils/localScoring'
 
 export default function Grammar() {
     const [questions, setQuestions] = useState([])
@@ -42,12 +43,20 @@ export default function Grammar() {
         setIsCorrect(correct)
         setShowResult(true)
         setShowExplanation(true)
-        setScore(prev => ({
-            correct: prev.correct + (correct ? 1 : 0),
-            total: prev.total + 1
-        }))
+        setScore(prev => {
+            const newScore = {
+                correct: prev.correct + (correct ? 1 : 0),
+                total: prev.total + 1
+            };
 
-        // Score tracked locally — no backend submission needed
+            // Check if this is the last question
+            if (currentIndex === questions.length - 1) {
+                const finalPercent = Math.round((newScore.correct / newScore.total) * 100);
+                saveModuleScore('grammar', finalPercent, newScore.total * 60);
+            }
+
+            return newScore;
+        })
     }
 
     const handleNext = () => {

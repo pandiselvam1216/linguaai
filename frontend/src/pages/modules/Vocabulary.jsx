@@ -7,6 +7,7 @@ import {
     Zap, PenLine, Brain
 } from 'lucide-react'
 import api from '../../services/api'
+import { saveModuleScore } from '../../utils/localScoring'
 
 // ─── Utility ────────────────────────────────────────────────────────────────
 function shuffle(arr) {
@@ -72,7 +73,11 @@ function FlashcardMode({ words, onFinish }) {
         setResults(updated)
         setFlipped(false)
         if (index + 1 >= words.length) {
-            setTimeout(() => setDone(true), 300)
+            setTimeout(() => {
+                setDone(true)
+                const know = updated.filter(r => r === 'know').length
+                saveModuleScore('vocabulary', Math.round((know / words.length) * 100), words.length * 10)
+            }, 300)
         } else {
             setTimeout(() => setIndex(index + 1), 200)
         }
@@ -220,6 +225,8 @@ function MultipleChoiceMode({ words, onFinish }) {
         setTimeout(() => {
             if (index + 1 >= shuffled.length) {
                 setDone(true)
+                const finalScore = score + (correct ? 1 : 0)
+                saveModuleScore('vocabulary', Math.round((finalScore / shuffled.length) * 100), shuffled.length * 15)
             } else {
                 setIndex(i => {
                     const next = i + 1
@@ -332,6 +339,7 @@ function FillBlankMode({ words, onFinish }) {
     const handleNext = () => {
         if (index + 1 >= shuffled.length) {
             setDone(true)
+            saveModuleScore('vocabulary', Math.round((score / shuffled.length) * 100), shuffled.length * 20)
         } else {
             setIndex(i => i + 1)
             setInput('')

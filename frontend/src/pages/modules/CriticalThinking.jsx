@@ -4,6 +4,7 @@ import { Brain, Mic, MicOff, Edit, Send, Clock, Play, Square, Award, AlertCircle
 import api from '../../services/api'
 import { getAICriticalThinkingFeedback, generateJAMTopics } from '../../services/aiService'
 import { getModuleQuestions } from '../../services/questionService'
+import { saveModuleScore } from '../../utils/localScoring'
 
 export default function CriticalThinking() {
     const [prompts, setPrompts] = useState([])
@@ -129,10 +130,12 @@ export default function CriticalThinking() {
         stopSession()
 
         try {
+            const timeTaken = (currentPrompt?.time_limit || 120) - timeLeft
             // Try AI feedback first
             const aiResult = await getAICriticalThinkingFeedback(response, currentPrompt?.content || currentPrompt?.title)
             if (aiResult) {
                 setResult(aiResult)
+                saveModuleScore('critical_thinking', aiResult.score?.total_score || 0, timeTaken)
                 return
             }
             // Fallback to Flask backend
@@ -140,18 +143,22 @@ export default function CriticalThinking() {
                 prompt_id: currentPrompt?.id,
                 response: response.trim(),
                 type: mode,
-                time_taken: (currentPrompt?.time_limit || 120) - timeLeft
+                time_taken: timeTaken
             })
             setResult(res.data)
+            saveModuleScore('critical_thinking', res.data.score?.total_score || 0, timeTaken)
         } catch (error) {
             console.error('Failed to submit:', error)
+            const timeTaken = (currentPrompt?.time_limit || 120) - timeLeft
             // Show basic fallback result
-            setResult({
+            const fallbackResult = {
                 score: {
                     total_score: 70, breakdown: { content: 70, structure: 70, argument: 70 },
                     feedback: 'Good effort! Keep practicing to improve your critical thinking skills.'
                 }
-            })
+            }
+            setResult(fallbackResult)
+            saveModuleScore('critical_thinking', fallbackResult.score.total_score, timeTaken)
         }
     }
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Headphones, Play, Pause, Volume2, VolumeX, Check, X, ChevronRight, Award } from 'lucide-react'
 import { getModuleQuestions } from '../../services/questionService'
+import { saveModuleScore } from '../../utils/localScoring'
 
 export default function Listening() {
     const [questions, setQuestions] = useState([])
@@ -88,12 +89,20 @@ export default function Listening() {
         const correct = selectedAnswer === currentQuestion.correct_answer
         setIsCorrect(correct)
         setShowResult(true)
-        setScore(prev => ({
-            correct: prev.correct + (correct ? 1 : 0),
-            total: prev.total + 1
-        }))
+        setScore(prev => {
+            const newScore = {
+                correct: prev.correct + (correct ? 1 : 0),
+                total: prev.total + 1
+            };
 
-        // Score tracked locally — no backend submission needed
+            // Check if this is the last question
+            if (currentIndex === questions.length - 1) {
+                const finalPercent = Math.round((newScore.correct / newScore.total) * 100);
+                saveModuleScore('listening', finalPercent, newScore.total * 60);
+            }
+
+            return newScore;
+        })
     }
 
     const handleNext = () => {
