@@ -651,7 +651,9 @@ export default function Vocabulary() {
         }
     }
 
-    // ── Search: calls Free Dictionary API directly from the browser ────────────
+    // ── Search: calls Merriam-Webster Student Dictionary API ────────────
+    const MW_API_KEY = import.meta.env.VITE_DICTIONARY_API_KEY || 'YOUR_LINDAN_LIBRARY_API_KEY' // Replace with your Merriam-Webster API Key
+
     const handleSearch = async (e) => {
         e.preventDefault()
         if (!searchWord.trim()) return
@@ -661,45 +663,85 @@ export default function Vocabulary() {
         setActiveTab('search')
 
         try {
+            // If the user hasn't set an API key, fallback to datamuse for simple definitions temporarily
+            if (MW_API_KEY === 'YOUR_LINDAN_LIBRARY_API_KEY' || !MW_API_KEY) {
+                const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(searchWord.trim().toLowerCase())}`)
+                if (!res.ok) { setSearchResult({ error: 'Word not found' }); return }
+                const data = await res.json()
+                const entry = data[0]
+
+                let phonetic = '', audio_url = ''
+                for (const p of entry.phonetics || []) {
+                    if (p.text) phonetic = p.text
+                    if (p.audio) audio_url = p.audio
+                }
+
+                const meanings = (entry.meanings || []).map(m => ({
+                    part_of_speech: m.partOfSpeech || '',
+                    // Simplify definitions heavily for a 5th grader fallback
+                    definitions: (m.definitions || []).slice(0, 2).map(d => ({
+                        definition: d.definition || '',
+                        example: d.example || '',
+                    }))
+                }))
+
+                setSearchResult({
+                    success: true,
+                    word: entry.word || searchWord,
+                    phonetic,
+                    audio_url,
+                    meanings,
+                    apiName: 'Free Dictionary (Please add your Lindan/Dictionary API Key for 5th grade definitions)'
+                })
+                return
+            }
+
+            // Using Student/Elementary Dictionary API (Merriam-Webster 'sd2' or 'sd3' or custom Lindan API)
             const res = await fetch(
-                `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(searchWord.trim().toLowerCase())}`
+                `https://www.dictionaryapi.com/api/v3/references/sd2/json/${encodeURIComponent(searchWord.trim().toLowerCase())}?key=${MW_API_KEY}`
             )
             if (!res.ok) { setSearchResult({ error: 'Word not found' }); return }
             const data = await res.json()
-            const entry = Array.isArray(data) ? data[0] : null
-            if (!entry) { setSearchResult({ error: 'Word not found' }); return }
 
-            // Extract phonetics
-            let phonetic = '', audio_url = ''
-            for (const p of entry.phonetics || []) {
-                if (p.text) phonetic = p.text
-                if (p.audio) audio_url = p.audio
-                if (phonetic && audio_url) break
+            // MW API returns an array of suggestions if word is not found exactly
+            if (!data.length || typeof data[0] === 'string') {
+                setSearchResult({ error: 'Word not found in student dictionary. Did you mean: ' + (data.slice(0, 3).join(', ') || 'nothing') })
+                return
             }
 
-            // Extract meanings (up to 3 definitions each)
-            const meanings = (entry.meanings || []).map(m => ({
-                part_of_speech: m.partOfSpeech || '',
-                definitions: (m.definitions || []).slice(0, 3).map(d => ({
-                    definition: d.definition || '',
-                    example: d.example || '',
-                    synonyms: (d.synonyms || []).slice(0, 5),
-                    antonyms: (d.antonyms || []).slice(0, 5)
-                })),
-                synonyms: (m.synonyms || []).slice(0, 10),
-                antonyms: (m.antonyms || []).slice(0, 10)
-            }))
+            const entry = data[0]
+
+            // Extract MW phonetics
+            let phonetic = entry.hwi?.prs?.[0]?.mw ? `/${entry.hwi.prs[0].mw}/` : ''
+            let audio_url = ''
+            if (entry.hwi?.prs?.[0]?.sound?.audio) {
+                const audio = entry.hwi.prs[0].sound.audio
+                let subdir = audio.charAt(0)
+                if (audio.startsWith('bix')) subdir = 'bix'
+                else if (audio.startsWith('gg')) subdir = 'gg'
+                else if (/^[^a-zA-Z]/.test(audio)) subdir = 'number'
+                audio_url = `https://media.merriam-webster.com/audio/prons/en/us/mp3/${subdir}/${audio}.mp3`
+            }
+
+            // Extract MW meanings (shortdef)
+            const meanings = [{
+                part_of_speech: entry.fl || '',
+                definitions: (entry.shortdef || []).map(def => ({
+                    definition: def,
+                    example: '' // MW Student API shortdef doesn't provide easy examples without deep parsing
+                }))
+            }]
 
             setSearchResult({
                 success: true,
-                word: entry.word || searchWord,
+                word: entry.meta?.id?.split(':')[0] || searchWord,
                 phonetic,
                 audio_url,
                 meanings,
-                source_urls: entry.sourceUrls || []
+                apiName: 'Student Dictionary API'
             })
         } catch (error) {
-            setSearchResult({ error: 'Unable to reach dictionary. Check your internet connection.' })
+            setSearchResult({ error: 'Unable to reach the dictionary API. Check your internet connection or API key.' })
         } finally {
             setSearching(false)
         }
