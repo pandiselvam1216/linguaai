@@ -5,8 +5,7 @@ import {
     Award, Clock, ChevronRight, BarChart2
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import api from '../../services/api'
-
+import { supabase } from '../../utils/supabaseClient'
 export default function AdminDashboard() {
     const [analytics, setAnalytics] = useState(null)
     const [loading, setLoading] = useState(true)
@@ -16,17 +15,58 @@ export default function AdminDashboard() {
     }, [])
 
     const fetchAnalytics = async () => {
+        setLoading(true)
         try {
-            const response = await api.get('/admin/analytics')
-            setAnalytics(response.data)
-        } catch (error) {
-            console.error('Failed to fetch analytics:', error)
-            // Mock data for demo
+            // Fetch users
+            const { data: users, error: usersError } = await supabase
+                .from('user_profiles')
+                .select('*')
+
+            if (usersError) throw usersError
+
+            // Fetch scores
+            const { data: scores, error: scoresError } = await supabase
+                .from('scores')
+                .select('*')
+
+            if (scoresError) throw scoresError
+
+            const studentsCount = (users || []).filter(u => u.role === 'student').length
+            const activeThisWeek = (users || []).filter(u => {
+                const createdDate = new Date(u.created_at)
+                const oneWeekAgo = new Date();
+                oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                return createdDate >= oneWeekAgo // roughly tracking
+            }).length
+
+            const recentMonthScores = (scores || []).filter(s => {
+                const createdDate = new Date(s.created_at)
+                const oneMonthAgo = new Date();
+                oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+                return createdDate >= oneMonthAgo
+            }).length
+
+            const totalScoreSum = (scores || []).reduce((acc, curr) => acc + curr.score, 0)
+            const average_score = scores && scores.length > 0 ? Math.round(totalScoreSum / scores.length) : 0
+
             setAnalytics({
-                users: { total: 156, students: 145, teachers: 8, admins: 3, active_this_week: 89 },
-                attempts: { total: 2450, recent_month: 340, average_score: 75.5 },
+                users: {
+                    total: users?.length || 0,
+                    students: studentsCount,
+                    teachers: 0,
+                    admins: (users || []).filter(u => u.role === 'admin').length,
+                    active_this_week: activeThisWeek
+                },
+                attempts: {
+                    total: scores?.length || 0,
+                    recent_month: recentMonthScores,
+                    average_score
+                },
                 modules: []
             })
+        } catch (error) {
+            console.error('Failed to fetch analytics:', error)
+            setAnalytics(null)
         } finally {
             setLoading(false)
         }

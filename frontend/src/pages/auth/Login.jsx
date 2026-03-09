@@ -27,15 +27,6 @@ export default function Login() {
         }
     }
 
-    const handleDemo = async (role) => {
-        const credentials = {
-            student: { email: 'student@neuralingua.com', password: 'Student@123' },
-            admin: { email: 'admin@neuralingua.com', password: 'Admin@123' }
-        }
-        setEmail(credentials[role].email)
-        setPassword(credentials[role].password)
-    }
-
     return (
         <div style={{
             minHeight: '100vh',
@@ -198,49 +189,6 @@ export default function Login() {
                             {loading ? 'Signing in...' : <>Sign In <ArrowRight size={18} /></>}
                         </button>
                     </form>
-
-                    {/* Divider */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', margin: '28px 0' }}>
-                        <div style={{ flex: 1, height: '1px', backgroundColor: '#E5E7EB' }}></div>
-                        <span style={{ fontSize: '13px', color: '#9CA3AF' }}>or try demo</span>
-                        <div style={{ flex: 1, height: '1px', backgroundColor: '#E5E7EB' }}></div>
-                    </div>
-
-                    {/* Demo Buttons */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                        <button
-                            type="button"
-                            onClick={() => handleDemo('student')}
-                            style={{
-                                padding: '12px',
-                                borderRadius: '10px',
-                                border: '1px solid #D1D5DB',
-                                backgroundColor: '#FFFFFF',
-                                color: '#374151',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                cursor: 'pointer',
-                            }}
-                        >
-                            Student Demo
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => handleDemo('admin')}
-                            style={{
-                                padding: '12px',
-                                borderRadius: '10px',
-                                border: '1px solid #D1D5DB',
-                                backgroundColor: '#FFFFFF',
-                                color: '#374151',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                cursor: 'pointer',
-                            }}
-                        >
-                            Admin Demo
-                        </button>
-                    </div>
 
                     {/* Register Link */}
                     <p style={{ textAlign: 'center', marginTop: '28px', fontSize: '14px', color: '#6B7280' }}>

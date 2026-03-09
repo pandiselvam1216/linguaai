@@ -4,8 +4,7 @@ import {
     BarChart2, Download, Search, TrendingUp, TrendingDown,
     Award, User, BookOpen, ChevronDown
 } from 'lucide-react'
-import api from '../../services/api'
-
+import { supabase } from '../../utils/supabaseClient'
 export default function Reports() {
     const [reports, setReports] = useState([])
     const [loading, setLoading] = useState(true)
@@ -17,19 +16,58 @@ export default function Reports() {
         fetchReports()
     }, [])
 
+    const calculateModuleAverage = (scores, module) => {
+        const moduleScores = scores.filter(s => s.module_type === module)
+        if (moduleScores.length === 0) return 0
+        const total = moduleScores.reduce((acc, curr) => acc + curr.score, 0)
+        return Math.round(total / moduleScores.length)
+    }
+
     const fetchReports = async () => {
+        setLoading(true)
         try {
-            const response = await api.get('/admin/reports')
-            setReports(response.data.reports || [])
+            // Fetch users with role 'student'
+            const { data: users, error: usersError } = await supabase
+                .from('user_profiles')
+                .select('*')
+                .eq('role', 'student')
+
+            if (usersError) throw usersError
+
+            // Fetch scores to get stats
+            const { data: scores, error: scoresError } = await supabase
+                .from('scores')
+                .select('*')
+
+            if (scoresError) throw scoresError
+
+            const reportsData = (users || []).map(student => {
+                const studentScores = (scores || []).filter(s => s.user_id === student.id)
+                const total_attempts = studentScores.length
+                const overall_average = total_attempts > 0 ? studentScores.reduce((acc, curr) => acc + curr.score, 0) / total_attempts : 0
+
+                const module_scores = {
+                    Listening: calculateModuleAverage(studentScores, 'listening'),
+                    Speaking: calculateModuleAverage(studentScores, 'speaking'),
+                    Reading: calculateModuleAverage(studentScores, 'reading'),
+                    Writing: calculateModuleAverage(studentScores, 'writing'),
+                    Grammar: calculateModuleAverage(studentScores, 'grammar'),
+                }
+
+                return {
+                    student,
+                    total_attempts,
+                    overall_average,
+                    module_scores
+                }
+            })
+
+            // Sort by overall average
+            reportsData.sort((a, b) => b.overall_average - a.overall_average)
+            setReports(reportsData)
         } catch (error) {
             console.error('Failed to fetch reports:', error)
-            // Mock data
-            setReports([
-                { student: { id: 1, full_name: 'John Doe', email: 'john@example.com' }, total_attempts: 45, overall_average: 85.5, module_scores: { Listening: 88, Speaking: 82, Reading: 90, Writing: 78, Grammar: 85 } },
-                { student: { id: 2, full_name: 'Jane Smith', email: 'jane@example.com' }, total_attempts: 38, overall_average: 78.2, module_scores: { Listening: 75, Speaking: 80, Reading: 82, Writing: 72, Grammar: 82 } },
-                { student: { id: 3, full_name: 'Bob Wilson', email: 'bob@example.com' }, total_attempts: 22, overall_average: 65.0, module_scores: { Listening: 60, Speaking: 68, Reading: 70, Writing: 62, Grammar: 65 } },
-                { student: { id: 4, full_name: 'Alice Brown', email: 'alice@example.com' }, total_attempts: 55, overall_average: 92.3, module_scores: { Listening: 95, Speaking: 90, Reading: 94, Writing: 88, Grammar: 95 } },
-            ])
+            setReports([])
         } finally {
             setLoading(false)
         }
