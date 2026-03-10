@@ -159,7 +159,7 @@ export default function Reports() {
                 justifyContent: 'space-between',
                 marginBottom: '24px',
                 flexWrap: 'wrap',
-                gap: '12px',
+                gap: '16px',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{

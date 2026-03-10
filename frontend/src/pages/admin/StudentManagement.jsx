@@ -357,6 +357,8 @@ export default function StudentManagement() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 marginBottom: '24px',
+                flexWrap: 'wrap',
+                gap: '16px',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{
@@ -380,7 +382,7 @@ export default function StudentManagement() {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                     <input
                         type="file"
                         accept=".csv"
@@ -449,6 +451,7 @@ export default function StudentManagement() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '16px',
+                    flexWrap: 'wrap',
                 }}>
                     <div style={{
                         flex: 1,
@@ -486,7 +489,7 @@ export default function StudentManagement() {
             <div style={{
                 backgroundColor: 'white',
                 borderRadius: '16px',
-                overflow: 'hidden',
+                overflowX: 'auto',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
             }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -509,7 +512,7 @@ export default function StudentManagement() {
                                 style={{ borderTop: '1px solid #F3F4F6' }}
                             >
                                 <td style={{ padding: '16px 24px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                                         <div style={{
                                             width: '40px',
                                             height: '40px',
