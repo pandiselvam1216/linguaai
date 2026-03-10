@@ -37,9 +37,29 @@ export function AuthProvider({ children }) {
     })
 
     const login = async (email, password) => {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw { response: { data: { error: error.message } } }
-        return mapUser(data.user)
+        // First authenticate with Supabase for realtime DB access
+        const { data: supabaseData, error: supabaseError } = await supabase.auth.signInWithPassword({ email, password })
+        if (supabaseError) throw { response: { data: { error: supabaseError.message } } }
+
+        try {
+            // Then authenticate with the backend to get the JWT token for admin routes
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('token', data.access_token);
+            } else {
+                console.error("Backend login failed, admin routes may not work.");
+            }
+        } catch (err) {
+            console.error("Error communicating with auth backend:", err);
+        }
+
+        return mapUser(supabaseData.user)
     }
 
     const register = async (email, password, fullName, role = 'student') => {
@@ -56,6 +76,7 @@ export function AuthProvider({ children }) {
 
     const logout = async () => {
         await supabase.auth.signOut()
+        localStorage.removeItem('token')
         setUser(null)
     }
 
