@@ -178,29 +178,6 @@ export default function Landing() {
                         </div>
                     </motion.div>
 
-                    {/* Stats */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3, duration: 0.6 }}
-                        className="landing-stats-grid"
-                    >
-                        <div style={{ textAlign: 'center' }}>
-                            <Users size={24} style={{ color: '#1A73E8', marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
-                            <div style={{ fontSize: '36px', fontWeight: '700', color: '#111827' }}>50,000+</div>
-                            <div style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px' }}>Active Students</div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                            <Award size={24} style={{ color: '#1A73E8', marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
-                            <div style={{ fontSize: '36px', fontWeight: '700', color: '#111827' }}>500+</div>
-                            <div style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px' }}>Institutions</div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                            <Star size={24} style={{ color: '#F59E0B', marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
-                            <div style={{ fontSize: '36px', fontWeight: '700', color: '#111827' }}>4.9/5</div>
-                            <div style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px' }}>User Rating</div>
-                        </div>
-                    </motion.div>
                 </div>
             </section>
 
