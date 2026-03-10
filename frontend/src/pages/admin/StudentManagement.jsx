@@ -5,6 +5,7 @@ import {
     ChevronLeft, ChevronRight, UserCheck, UserX, Mail, Upload, Download
 } from 'lucide-react'
 import { supabase } from '../../utils/supabaseClient'
+import Modal from '../../components/common/Modal'
 
 export default function StudentManagement() {
     const [students, setStudents] = useState([])
@@ -18,6 +19,11 @@ export default function StudentManagement() {
     const [formData, setFormData] = useState({ email: '', password: '', full_name: '', is_active: true })
     const [saving, setSaving] = useState(false)
     const [deleting, setDeleting] = useState(null)
+    const [alertConfig, setAlertConfig] = useState({ isOpen: false })
+
+    const showAlert = (title, message, theme = 'info') => {
+        setAlertConfig({ isOpen: true, title, message, theme, type: 'alert' })
+    }
 
     useEffect(() => {
         fetchStudents()
@@ -142,7 +148,7 @@ export default function StudentManagement() {
             fetchStudents()
         } catch (error) {
             console.error('Failed to save student:', error)
-            alert(error.message || 'Failed to save student')
+            showAlert('Error', error.message || 'Failed to save student', 'danger')
         } finally {
             setSaving(false)
         }
@@ -179,7 +185,7 @@ export default function StudentManagement() {
             // Replace \r to handle Windows line endings, then filter empty lines.
             const lines = text.replace(/\r/g, '').split('\n').filter(l => l.trim().length > 0);
             if (lines.length < 2) {
-                alert("CSV must contain a header row and at least one data row.");
+                showAlert('Invalid CSV', 'CSV must contain a header row and at least one data row.', 'danger')
                 return;
             }
 
@@ -189,7 +195,7 @@ export default function StudentManagement() {
             const emailIdx = header.findIndex(h => h.includes('email'));
 
             if (nameIdx === -1 || emailIdx === -1) {
-                alert(`CSV header must contain 'name' and 'email' columns. Found: ${header.join(', ')}`);
+                showAlert('Missing Columns', `CSV header must contain 'name' and 'email' columns. Found: ${header.join(', ')}`, 'danger')
                 return;
             }
 
@@ -250,7 +256,7 @@ export default function StudentManagement() {
             }
 
             if (insertPayload.length === 0) {
-                alert(`Import finished: 0 new students added. ${skipped} skipped.\n\nErrors:\n${errorList.slice(0, 5).join('\n')}${errorList.length > 5 ? '\n...' : ''}`);
+                showAlert('Import Finished', `0 new students added. ${skipped} skipped.\n\nErrors:\n${errorList.slice(0, 5).join('\n')}${errorList.length > 5 ? '\n...' : ''}`, 'warning')
                 return;
             }
 
@@ -275,35 +281,42 @@ export default function StudentManagement() {
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
 
-            alert(successMsg);
+            showAlert('Import Successful', successMsg, 'success')
             fetchStudents();
 
         } catch (error) {
             console.error("Error importing CSV:", error);
-            alert("Failed to import CSV: " + error.message);
+            showAlert('Import Failed', "Failed to import CSV: " + error.message, 'danger')
         } finally {
             setIsImporting(false);
             e.target.value = null; // Clear input
         }
     };
 
-    const handleDelete = async (studentId) => {
-        if (!window.confirm('Are you sure you want to delete this student? This action cannot be undone.')) {
-            return
-        }
-
-        setDeleting(studentId)
-        try {
-            const { error } = await supabase.from('user_profiles').delete().eq('id', studentId)
-            if (error) throw error
-            // Deleting from auth.users requires admin API, so we just delete the profile.
-            fetchStudents()
-        } catch (error) {
-            console.error('Failed to delete student:', error)
-            alert(error.message || 'Failed to delete student')
-        } finally {
-            setDeleting(null)
-        }
+    const handleDelete = (studentId) => {
+        setAlertConfig({
+            isOpen: true,
+            title: 'Delete Student',
+            message: 'Are you sure you want to delete this student? This action cannot be undone.',
+            theme: 'danger',
+            type: 'confirm',
+            confirmText: 'Delete',
+            onConfirm: async () => {
+                setAlertConfig({ isOpen: false })
+                setDeleting(studentId)
+                try {
+                    const { error } = await supabase.from('user_profiles').delete().eq('id', studentId)
+                    if (error) throw error
+                    // Deleting from auth.users requires admin API, so we just delete the profile.
+                    fetchStudents()
+                } catch (error) {
+                    console.error('Failed to delete student:', error)
+                    showAlert('Error', error.message || 'Failed to delete student', 'danger')
+                } finally {
+                    setDeleting(null)
+                }
+            }
+        })
     }
 
     const handleToggleStatus = async (student) => {
@@ -831,6 +844,18 @@ export default function StudentManagement() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Custom Modal for Alerts and Confirms */}
+            <Modal
+                isOpen={alertConfig.isOpen}
+                onClose={() => setAlertConfig({ isOpen: false })}
+                onConfirm={alertConfig.onConfirm}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                theme={alertConfig.theme}
+                type={alertConfig.type}
+                confirmText={alertConfig.confirmText || 'OK'}
+            />
         </div>
     )
 }

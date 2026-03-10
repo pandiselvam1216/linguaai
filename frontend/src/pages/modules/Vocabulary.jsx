@@ -866,9 +866,9 @@ export default function Vocabulary() {
                                 </form>
 
                                 {!searchResult && !searching && (
-                                    <div style={{ textAlign: 'center', padding: '60px 0', opacity: 0.6 }}>
+                                    <div style={{ padding: '60px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.6 }}>
                                         <Sparkles size={48} style={{ color: '#DDD6FE', marginBottom: '16px' }} />
-                                        <p style={{ fontSize: '16px', color: '#6B7280' }}>
+                                        <p style={{ fontSize: '16px', color: '#6B7280', margin: 0 }}>
                                             Enter a word above to see its definition, pronunciation, and more.
                                         </p>
                                     </div>

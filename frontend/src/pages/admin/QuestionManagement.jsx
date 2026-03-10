@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import api from '../../services/api'
 import { supabase } from '../../utils/supabaseClient'
+import Modal from '../../components/common/Modal'
 
 const moduleIcons = {
     listening: Headphones,
@@ -34,6 +35,12 @@ export default function QuestionManagement() {
     const [saveError, setSaveError] = useState('')
     const [saveSuccess, setSaveSuccess] = useState(false)
     const [usingLocalStorage, setUsingLocalStorage] = useState(false)
+    const [alertConfig, setAlertConfig] = useState({ isOpen: false })
+
+    const showAlert = (title, message, theme = 'info') => {
+        setAlertConfig({ isOpen: true, title, message, theme, type: 'alert' })
+    }
+
     const [formData, setFormData] = useState({
         title: '',
         content: '',
@@ -158,7 +165,7 @@ export default function QuestionManagement() {
             }))
         } catch (err) {
             console.error('PDF extraction failed:', err)
-            alert('Could not read PDF. Please try again or type the passage manually.')
+            showAlert('PDF Error', 'Could not read PDF. Please try again or type the passage manually.', 'danger')
         } finally {
             setPdfLoading(false)
         }
@@ -273,17 +280,27 @@ export default function QuestionManagement() {
         setSaving(false)
     }
 
-    const handleDelete = async (questionId) => {
-        if (!window.confirm('Are you sure you want to delete this question?')) return
-        try {
-            if (!usingLocalStorage) {
-                const { error } = await supabase.from('questions').delete().eq('id', questionId)
-                if (error) throw error
+    const handleDelete = (questionId) => {
+        setAlertConfig({
+            isOpen: true,
+            title: 'Delete Question',
+            message: 'Are you sure you want to delete this question?',
+            theme: 'danger',
+            type: 'confirm',
+            confirmText: 'Delete',
+            onConfirm: async () => {
+                setAlertConfig({ isOpen: false })
+                try {
+                    if (!usingLocalStorage) {
+                        const { error } = await supabase.from('questions').delete().eq('id', questionId)
+                        if (error) throw error
+                    }
+                } catch (_) { /* ignore Supabase errors, still remove locally */ }
+                const updated = questions.filter(q => q.id !== questionId)
+                setQuestions(updated)
+                if (usingLocalStorage) saveLocalQuestions(updated)
             }
-        } catch (_) { /* ignore Supabase errors, still remove locally */ }
-        const updated = questions.filter(q => q.id !== questionId)
-        setQuestions(updated)
-        if (usingLocalStorage) saveLocalQuestions(updated)
+        })
     }
 
     const filteredQuestions = questions.filter(q =>
@@ -495,9 +512,9 @@ export default function QuestionManagement() {
                         }} />
                     </div>
                 ) : filteredQuestions.length === 0 ? (
-                    <div style={{ padding: '48px', textAlign: 'center' }}>
+                    <div style={{ padding: '48px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                         <BookOpen size={48} style={{ color: '#D1D5DB', marginBottom: '16px' }} />
-                        <p style={{ fontSize: '16px', color: '#6B7280' }}>No questions found</p>
+                        <p style={{ fontSize: '16px', color: '#6B7280', margin: 0 }}>No questions found</p>
                     </div>
                 ) : (
                     <div>
@@ -993,6 +1010,18 @@ export default function QuestionManagement() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Custom Modal for Alerts and Confirms */}
+            <Modal
+                isOpen={alertConfig.isOpen}
+                onClose={() => setAlertConfig({ isOpen: false })}
+                onConfirm={alertConfig.onConfirm}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                theme={alertConfig.theme}
+                type={alertConfig.type}
+                confirmText={alertConfig.confirmText || 'OK'}
+            />
         </div>
     )
 }

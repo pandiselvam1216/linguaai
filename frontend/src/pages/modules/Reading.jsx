@@ -154,12 +154,15 @@ export default function Reading() {
                     backgroundColor: 'white',
                     borderRadius: '16px',
                     padding: '48px',
-                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 }}>
                     <BookOpen size={48} style={{ color: '#D1D5DB', marginBottom: '16px' }} />
-                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827' }}>No reading passages available</h3>
-                    <p style={{ color: '#6B7280', marginTop: '8px' }}>Check back later for new content.</p>
+                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: '0 0 8px' }}>No reading passages available</h3>
+                    <p style={{ color: '#6B7280', margin: 0 }}>Check back later for new content.</p>
                 </div>
             </div>
         )

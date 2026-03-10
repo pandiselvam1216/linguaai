@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Mic, MicOff, Clock, Send, RotateCcw, CheckCircle, AlertCircle, Volume2 } from 'lucide-react'
 import { evaluateSpeaking } from '../../utils/localScoring'
 import { getModuleQuestions } from '../../services/questionService'
+import Modal from '../../components/common/Modal'
 
 export default function Speaking() {
     const [prompts, setPrompts] = useState([])
@@ -15,6 +16,11 @@ export default function Speaking() {
     const [submitting, setSubmitting] = useState(false)
     const recognitionRef = useRef(null)
     const timerRef = useRef(null)
+    const [alertConfig, setAlertConfig] = useState({ isOpen: false })
+
+    const showAlert = (title, message, theme = 'info') => {
+        setAlertConfig({ isOpen: true, title, message, theme, type: 'alert' })
+    }
 
     useEffect(() => {
         fetchPrompts()
@@ -55,7 +61,7 @@ export default function Speaking() {
 
     const startRecording = () => {
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-            alert('Speech recognition is not supported in this browser.')
+            showAlert('Browser Not Supported', 'Speech recognition is not supported in this browser. Please try Google Chrome.', 'warning')
             return
         }
 
@@ -158,6 +164,27 @@ export default function Speaking() {
                     borderRadius: '50%',
                     animation: 'spin 1s linear infinite',
                 }} />
+            </div>
+        )
+    }
+
+    if (!prompts.length) {
+        return (
+            <div style={{ padding: '32px', backgroundColor: '#F9FAFB', minHeight: '100vh' }}>
+                <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    padding: '48px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                }}>
+                    <Mic size={48} style={{ color: '#D1D5DB', marginBottom: '16px' }} />
+                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: 0 }}>No speaking prompts available</h3>
+                    <p style={{ color: '#6B7280', marginTop: '8px', margin: '8px 0 0 0' }}>Check back later for new topics to practice.</p>
+                </div>
             </div>
         )
     }
@@ -561,6 +588,18 @@ export default function Speaking() {
                     </AnimatePresence>
                 </div>
             </div>
+
+            {/* Custom Modal for Alerts and Confirms */}
+            <Modal
+                isOpen={alertConfig.isOpen}
+                onClose={() => setAlertConfig({ isOpen: false })}
+                onConfirm={alertConfig.onConfirm}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                theme={alertConfig.theme}
+                type={alertConfig.type}
+                confirmText={alertConfig.confirmText || 'OK'}
+            />
         </div>
     )
 }
