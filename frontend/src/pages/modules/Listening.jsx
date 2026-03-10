@@ -453,30 +453,6 @@ export default function Listening() {
                         </motion.div>
                     )}
 
-                    {/* Playback Area (Matches Speaking Recording Area) */}
-                    <div style={{
-                        backgroundColor: 'white',
-                        borderRadius: '16px',
-                        padding: '40px',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                        textAlign: 'center',
-                    }}>
-                        <h3 style={{
-                            fontSize: '18px',
-                            fontWeight: '600',
-                            color: '#111827',
-                            marginBottom: '8px',
-                        }}>
-                            {currentQuestion.title}
-                        </h3>
-                        <p style={{
-                            fontSize: '15px',
-                            color: '#6B7280',
-                            marginBottom: '24px',
-                        }}>
-                            {currentQuestion.content}
-                        </p>
-                    </div>
 
                     {/* Answer Options */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
