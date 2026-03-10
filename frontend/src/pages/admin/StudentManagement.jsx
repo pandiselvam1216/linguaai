@@ -5,10 +5,7 @@ import {
     ChevronLeft, ChevronRight, UserCheck, UserX, Mail, Upload, Download
 } from 'lucide-react'
 import { supabase } from '../../utils/supabaseClient'
-<<<<<<< HEAD
 import Modal from '../../components/common/Modal'
-=======
->>>>>>> 34d4fe631cf8f3cb490ebe3737e710be656e22a4
 
 export default function StudentManagement() {
     const [students, setStudents] = useState([])
@@ -18,11 +15,8 @@ export default function StudentManagement() {
     const [search, setSearch] = useState('')
     const [showModal, setShowModal] = useState(false)
     const [isImporting, setIsImporting] = useState(false)
-<<<<<<< HEAD
-=======
     const [showPreviewModal, setShowPreviewModal] = useState(false)
     const [previewResults, setPreviewResults] = useState({ success: [], skipped: [] })
->>>>>>> 34d4fe631cf8f3cb490ebe3737e710be656e22a4
     const [editingStudent, setEditingStudent] = useState(null)
     const [formData, setFormData] = useState({ email: '', password: '', full_name: '', is_active: true })
     const [saving, setSaving] = useState(false)
@@ -167,8 +161,6 @@ export default function StudentManagement() {
         let p = "";
         for (let i = 0, n = charset.length; i < 12; ++i) {
             p += charset.charAt(Math.floor(Math.random() * n));
-<<<<<<< HEAD
-=======
         }
         return p;
     };
@@ -322,143 +314,6 @@ export default function StudentManagement() {
         window.URL.revokeObjectURL(url);
     };
 
-    const handleDelete = async (studentId) => {
-        if (!window.confirm('Are you sure you want to delete this student? This action cannot be undone.')) {
-            return
->>>>>>> 34d4fe631cf8f3cb490ebe3737e710be656e22a4
-        }
-        return p;
-    };
-
-    // A basic hash function for dummy passwords since the backend uses bcrypt
-    // Here we're using a simple faux-hash to avoid raw passwords in DB simply to match existing dummy insertions
-    const hashPassword = async (pass) => {
-        const msgUint8 = new TextEncoder().encode(pass);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        return hashHex;
-    };
-
-    const handleFileUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        setIsImporting(true);
-        try {
-            const text = await file.text();
-
-            // Basic CSV Parse: Split by newline, then split each line by comma.
-            // Replace \r to handle Windows line endings, then filter empty lines.
-            const lines = text.replace(/\r/g, '').split('\n').filter(l => l.trim().length > 0);
-            if (lines.length < 2) {
-                showAlert('Invalid CSV', 'CSV must contain a header row and at least one data row.', 'danger')
-                return;
-            }
-
-            // Extract headers, remove quotes and hidden characters, and prepare for matching
-            const header = lines[0].toLowerCase().split(',').map(h => h.replace(/['"]+/g, '').replace(/[\u200B-\u200D\uFEFF]/g, '').trim());
-            const nameIdx = header.findIndex(h => h.includes('name'));
-            const emailIdx = header.findIndex(h => h.includes('email'));
-
-            if (nameIdx === -1 || emailIdx === -1) {
-                showAlert('Missing Columns', `CSV header must contain 'name' and 'email' columns. Found: ${header.join(', ')}`, 'danger')
-                return;
-            }
-
-            // 1. Parse rows
-            const newUsers = [];
-            for (let i = 1; i < lines.length; i++) {
-                const cols = lines[i].split(',').map(c => c.trim());
-                if (cols.length < Math.max(nameIdx, emailIdx) + 1) continue;
-
-                const rawName = cols[nameIdx];
-                const rawEmail = cols[emailIdx].toLowerCase();
-
-                if (rawName && rawEmail) {
-                    newUsers.push({ full_name: rawName, email: rawEmail });
-                }
-            }
-
-            // 2. Fetch existing to prevent duplicates
-            const { data: existingProfiles, error: fetchError } = await supabase
-                .from('user_profiles')
-                .select('email');
-
-            if (fetchError) throw fetchError;
-            const existingEmails = new Set(existingProfiles.map(p => p.email.toLowerCase()));
-
-            // 4. Batch Create Users directly into profiles (Bypassing Auth Rate Limit per user request)
-            let skipped = 0;
-            const insertPayload = [];
-            const errorList = [];
-
-            for (const user of newUsers) {
-                if (existingEmails.has(user.email)) {
-                    skipped++;
-                    errorList.push(`[${user.email}] Already exists.`);
-                    continue;
-                }
-
-                const tempPassword = generatePassword();
-                const fakeAuthId = crypto.randomUUID(); // Used just to satisfy the profiles table
-
-                // Insert profile (If foreign key constraint exists, this WILL fail unless the DB allows it)
-                const { error: insertError } = await supabase
-                    .from('user_profiles')
-                    .insert([{
-                        id: fakeAuthId,
-                        full_name: user.full_name,
-                        email: user.email,
-                        role: 'student'
-                    }]);
-
-                if (insertError) {
-                    console.error("Profile creation failed for:", user.email, insertError);
-                    skipped++;
-                    errorList.push(`[${user.email}] DB Error: ${insertError.message}`);
-                } else {
-                    insertPayload.push({ email: user.email, tempPassword });
-                }
-            }
-
-            if (insertPayload.length === 0) {
-                showAlert('Import Finished', `0 new students added. ${skipped} skipped.\n\nErrors:\n${errorList.slice(0, 5).join('\n')}${errorList.length > 5 ? '\n...' : ''}`, 'warning')
-                return;
-            }
-
-            // Success!
-            let successMsg = `Import successful: ${insertPayload.length} students added. Passwords auto-generated and downloading as CSV now.\n`;
-            if (skipped > 0) successMsg += `${skipped} skipped:\n${errorList.slice(0, 5).join('\n')}${errorList.length > 5 ? '\n...' : ''}`;
-
-            // Generate CSV for credentials download
-            let csvContent = "email,password\n";
-            insertPayload.forEach(p => {
-                csvContent += `${p.email},${p.tempPassword}\n`;
-            });
-
-            // Trigger download
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", `student_credentials_${new Date().toISOString().split('T')[0]}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-
-            showAlert('Import Successful', successMsg, 'success')
-            fetchStudents();
-
-        } catch (error) {
-            console.error("Error importing CSV:", error);
-            showAlert('Import Failed', "Failed to import CSV: " + error.message, 'danger')
-        } finally {
-            setIsImporting(false);
-            e.target.value = null; // Clear input
-        }
-    };
 
     const handleDelete = (studentId) => {
         setAlertConfig({
@@ -549,11 +404,7 @@ export default function StudentManagement() {
                     </div>
                 </div>
 
-<<<<<<< HEAD
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-=======
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
->>>>>>> 34d4fe631cf8f3cb490ebe3737e710be656e22a4
                     <input
                         type="file"
                         accept=".csv"
@@ -1018,7 +869,6 @@ export default function StudentManagement() {
                     </motion.div>
                 )}
             </AnimatePresence>
-<<<<<<< HEAD
 
             {/* Custom Modal for Alerts and Confirms */}
             <Modal
@@ -1031,7 +881,7 @@ export default function StudentManagement() {
                 type={alertConfig.type}
                 confirmText={alertConfig.confirmText || 'OK'}
             />
-=======
+
             {/* Preview Results Modal */}
             <AnimatePresence>
                 {showPreviewModal && (
@@ -1237,7 +1087,7 @@ export default function StudentManagement() {
                     </motion.div>
                 )}
             </AnimatePresence>
->>>>>>> 34d4fe631cf8f3cb490ebe3737e710be656e22a4
+
         </div>
     )
 }

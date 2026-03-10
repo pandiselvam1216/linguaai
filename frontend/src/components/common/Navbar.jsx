@@ -3,7 +3,7 @@ import { Menu, Bell, Search, Wifi, WifiOff, Mic, MicOff, Volume2, VolumeX } from
 import { useAuth } from '../../context/AuthContext'
 
 export default function Navbar({ onMenuClick }) {
-    const { user } = useAuth()
+    const { user, isAdmin } = useAuth()
     const [isOnline, setIsOnline] = useState(navigator.onLine)
     const [micStatus, setMicStatus] = useState('unknown')
     const [audioStatus, setAudioStatus] = useState(false)
@@ -188,8 +188,8 @@ export default function Navbar({ onMenuClick }) {
                         <p style={{ fontSize: '14px', fontWeight: '500', color: '#111827', whiteSpace: 'nowrap' }}>
                             {user?.full_name || 'User'}
                         </p>
-                        <p style={{ fontSize: '12px', color: '#6B7280' }}>
-                            {user?.role?.name || 'Student'}
+                        <p style={{ fontSize: '12px', color: '#6B7280', textTransform: 'capitalize' }}>
+                            {isAdmin ? 'Admin' : (user?.role?.name || 'Student')}
                         </p>
                     </div>
                     {/* Animated Premium Avatar container container */}
