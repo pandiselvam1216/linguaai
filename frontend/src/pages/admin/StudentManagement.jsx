@@ -99,95 +99,25 @@ export default function StudentManagement() {
         setSaving(true)
 
         try {
-            const token = localStorage.getItem('token');
-            const headers = {
-                'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-            };
-
             if (editingStudent) {
-                // Update existing student profile in Supabase
-                const { error: updateError } = await supabase
+                const { error } = await supabase
                     .from('user_profiles')
-                    .update({
-                        full_name: formData.full_name,
-                        email: formData.email
-                    })
-                    .eq('id', editingStudent.id);
-
-                if (updateError) {
-                    throw new Error(updateError.message || 'Failed to update student');
-                }
-
-                // Note: Updating password for other users requires the Admin API (Service Role Key).
-                if (formData.password) {
-                    console.warn("Password updates require backend Service Role config and were skipped.");
-                }
-
+                    .update({ full_name: formData.full_name, email: formData.email })
+                    .eq('id', editingStudent.id)
+                if (error) throw error
             } else {
-                // 1. Manually create the user in Supabase Auth via REST API to avoid the JS Client overwriting the Admin's session
-                const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-                const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-                // Ensure an admin session exists before proceeding to satisfy RLS needs
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) {
-                    throw new Error("Authorization required: No active session. Please log in.");
-                }
-
-                const supabaseRes = await fetch(`${supabaseUrl}/auth/v1/signup`, {
-                    method: 'POST',
-                    headers: {
-                        'apikey': supabaseKey,
-                        'Authorization': `Bearer ${supabaseKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        email: formData.email.trim(),
-                        password: formData.password,
-                        data: {
-                            full_name: formData.full_name,
-                            role: 'student'
-                        }
-                    })
-                });
-
-                if (!supabaseRes.ok) {
-                    const errorData = await supabaseRes.json();
-                    const errorMessage = errorData.msg || errorData.message || 'Failed to create user';
-
-                    if (errorMessage.toLowerCase().includes('rate limit')) {
-                        throw new Error(`Supabase Rate Limit Reached: ${errorMessage}`);
-                    } else {
-                        throw new Error(`Supabase Auth Error: ${errorMessage}`);
-                    }
-                }
-
-                const newAuthUser = await supabaseRes.json();
-                const userId = newAuthUser.id || newAuthUser.user?.id;
-
-                if (userId) {
-                    // 2. Create new student in the Supabase user_profiles table directly
-                    const { error: insertError } = await supabase
-                        .from('user_profiles')
-                        .insert([
-                            {
-                                id: userId,
-                                email: formData.email.trim(),
-                                full_name: formData.full_name,
-                                role: 'student'
-                            }
-                        ]);
-
-                    if (insertError) {
-                        // In some setups, an Auth trigger creates this row automatically.
-                        if (!insertError.message.includes('duplicate key')) {
-                            throw new Error(`Failed to save student profile: ${insertError.message}`);
-                        }
-                    }
-                } else {
-                    throw new Error("Failed to retrieve user ID from authentication service.");
-                }
+                // In Supabase Auth, creating a user from client-side requires signing up, which sends email.
+                // We'll just create a profile, but the user won't actually have an auth account unless they sign up.
+                // Alternatively, admin creates dummy profiles.
+                const { error } = await supabase
+                    .from('user_profiles')
+                    .insert([{
+                        id: crypto.randomUUID(),
+                        full_name: formData.full_name,
+                        email: formData.email,
+                        role: 'student'
+                    }])
+                if (error) throw error
             }
             handleCloseModal()
             fetchStudents()

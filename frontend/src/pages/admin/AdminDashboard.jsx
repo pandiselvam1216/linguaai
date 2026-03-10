@@ -39,20 +39,34 @@ export default function AdminDashboard() {
                 return createdDate >= oneWeekAgo // roughly tracking
             }).length
 
-            const recentMonthScores = (scores || []).filter(s => {
+            const newStudentsThisMonth = (users || []).filter(u => {
+                if (u.role !== 'student') return false;
+                const createdDate = new Date(u.created_at);
+                const oneMonthAgo = new Date();
+                oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+                return createdDate >= oneMonthAgo;
+            }).length
+
+            const recentMonthScoresList = (scores || []).filter(s => {
                 const createdDate = new Date(s.created_at)
                 const oneMonthAgo = new Date();
                 oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
                 return createdDate >= oneMonthAgo
-            }).length
+            })
+            const recentMonthScores = recentMonthScoresList.length
 
             const totalScoreSum = (scores || []).reduce((acc, curr) => acc + curr.score, 0)
             const average_score = scores && scores.length > 0 ? Math.round(totalScoreSum / scores.length) : 0
+
+            // Assuming passing score is > 0 and using it to measure completion rate of practice sessions
+            const recentMonthPasses = recentMonthScoresList.filter(s => s.score > 0).length
+            const completionRate = recentMonthScores > 0 ? Math.round((recentMonthPasses / recentMonthScores) * 100) : 0
 
             setAnalytics({
                 users: {
                     total: users?.length || 0,
                     students: studentsCount,
+                    new_students_this_month: newStudentsThisMonth,
                     teachers: 0,
                     admins: (users || []).filter(u => u.role === 'admin').length,
                     active_this_week: activeThisWeek
@@ -60,7 +74,8 @@ export default function AdminDashboard() {
                 attempts: {
                     total: scores?.length || 0,
                     recent_month: recentMonthScores,
-                    average_score
+                    average_score,
+                    completion_rate: completionRate
                 },
                 modules: []
             })
@@ -284,7 +299,7 @@ export default function AdminDashboard() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {quickLinks.map((link) => (
                                 <Link
-                                            key={link.path}
+                                    key={link.path}
                                     to={link.path}
                                     style={{
                                         display: 'flex',
@@ -342,7 +357,7 @@ export default function AdminDashboard() {
                             }}>
                                 <span style={{ fontSize: '14px', color: '#6B7280' }}>New Students</span>
                                 <span style={{ fontSize: '16px', fontWeight: '600', color: '#111827' }}>
-                                    +{Math.floor(Math.random() * 20) + 5}
+                                    +{analytics?.users?.new_students_this_month || 0}
                                 </span>
                             </div>
                             <div style={{
@@ -352,7 +367,7 @@ export default function AdminDashboard() {
                             }}>
                                 <span style={{ fontSize: '14px', color: '#6B7280' }}>Practice Sessions</span>
                                 <span style={{ fontSize: '16px', fontWeight: '600', color: '#111827' }}>
-                                    {analytics?.attempts?.recent_month || 340}
+                                    {analytics?.attempts?.recent_month || 0}
                                 </span>
                             </div>
                             <div style={{
@@ -362,7 +377,7 @@ export default function AdminDashboard() {
                             }}>
                                 <span style={{ fontSize: '14px', color: '#6B7280' }}>Completion Rate</span>
                                 <span style={{ fontSize: '16px', fontWeight: '600', color: '#22C55E' }}>
-                                    87%
+                                    {analytics?.attempts?.completion_rate !== undefined ? analytics.attempts.completion_rate : 0}%
                                 </span>
                             </div>
                         </div>
