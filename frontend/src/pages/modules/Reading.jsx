@@ -588,6 +588,7 @@ export default function Reading() {
                                     }}
                                 >
                                     <Send size={18} />
+                                    Submit Answers
                                 </button>
                             ) : currentIndex < passages.length - 1 ? (
                                 <button
