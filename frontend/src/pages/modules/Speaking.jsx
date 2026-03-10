@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, MicOff, Clock, Send, RotateCcw, CheckCircle, AlertCircle, Volume2 } from 'lucide-react'
+import { Mic, MicOff, Clock, Send, RotateCcw, CheckCircle, AlertCircle, Volume2, ChevronRight } from 'lucide-react'
 import { evaluateSpeaking } from '../../utils/localScoring'
 import { getModuleQuestions } from '../../services/questionService'
 import Modal from '../../components/common/Modal'
@@ -17,11 +17,12 @@ export default function Speaking() {
     const recognitionRef = useRef(null)
     const timerRef = useRef(null)
     const [alertConfig, setAlertConfig] = useState({ isOpen: false })
+    const [completedTopics, setCompletedTopics] = useState([]);
+    const [showPopup, setShowPopup] = useState(false);
 
     const showAlert = (title, message, theme = 'info') => {
         setAlertConfig({ isOpen: true, title, message, theme, type: 'alert' })
     }
-
     useEffect(() => {
         fetchPrompts()
         return () => {
@@ -116,6 +117,13 @@ export default function Speaking() {
         setTimeLeft(selectedPrompt?.time_limit || 60)
     }
 
+    const handleNextTopic = () => {
+        const currentIndex = prompts.findIndex(p => p.id === selectedPrompt.id)
+        if (currentIndex < prompts.length - 1) {
+            handleSelectPrompt(prompts[currentIndex + 1])
+        }
+    }
+
     const handleSubmit = async () => {
         if (!transcript.trim()) return
 
@@ -130,6 +138,9 @@ export default function Speaking() {
             setTimeout(() => {
                 setFeedback(result)
                 setSubmitting(false)
+                if (!completedTopics.includes(selectedPrompt.id)) {
+                    setCompletedTopics(prev => [...prev, selectedPrompt.id])
+                }
             }, 1500)
 
         } catch (error) {
@@ -259,22 +270,29 @@ export default function Speaking() {
                                     opacity: isRecording ? 0.5 : 1,
                                 }}
                             >
-                                <p style={{
-                                    fontSize: '14px',
-                                    fontWeight: selectedPrompt?.id === prompt.id ? '600' : '500',
-                                    color: selectedPrompt?.id === prompt.id ? '#166534' : '#374151',
-                                    margin: 0,
-                                    marginBottom: '4px',
-                                }}>
-                                    {prompt.title}
-                                </p>
-                                <p style={{
-                                    fontSize: '12px',
-                                    color: '#9CA3AF',
-                                    margin: 0,
-                                }}>
-                                    {prompt.time_limit}s limit
-                                </p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ flex: 1 }}>
+                                        <p style={{
+                                            fontSize: '14px',
+                                            fontWeight: selectedPrompt?.id === prompt.id ? '600' : '500',
+                                            color: selectedPrompt?.id === prompt.id ? '#166534' : '#374151',
+                                            margin: 0,
+                                            marginBottom: '4px',
+                                        }}>
+                                            {prompt.title}
+                                        </p>
+                                        <p style={{
+                                            fontSize: '12px',
+                                            color: '#9CA3AF',
+                                            margin: 0,
+                                        }}>
+                                            {prompt.time_limit}s limit
+                                        </p>
+                                    </div>
+                                    {completedTopics.includes(prompt.id) && (
+                                        <CheckCircle size={16} style={{ color: '#22C55E' }} />
+                                    )}
+                                </div>
                             </motion.button>
                         ))}
                     </div>
@@ -459,6 +477,30 @@ export default function Speaking() {
                                 <Send size={16} />
                                 {submitting ? 'Analyzing...' : 'Get Feedback'}
                             </button>
+
+                            {/* Added Next Topic button */}
+                            {feedback && prompts.findIndex(p => p.id === selectedPrompt.id) < prompts.length - 1 && (
+                                <button
+                                    onClick={handleNextTopic}
+                                    style={{
+                                        padding: '12px 24px',
+                                        borderRadius: '10px',
+                                        border: 'none',
+                                        background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                                        color: 'white',
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
+                                    }}
+                                >
+                                    Next Topic
+                                    <ChevronRight size={16} />
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -586,6 +628,32 @@ export default function Speaking() {
                             </motion.div>
                         )}
                     </AnimatePresence>
+
+                    {/* Final Submit Button (Visible on last question or after some progress) */}
+                    {(feedback || prompts.findIndex(p => p.id === selectedPrompt?.id) === prompts.length - 1) && (
+                        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '12px' }}>
+                            <button
+                                onClick={() => setShowPopup(true)}
+                                style={{
+                                    padding: '16px 40px',
+                                    borderRadius: '12px',
+                                    border: 'none',
+                                    background: 'linear-gradient(135deg, #111827 0%, #374151 100%)',
+                                    color: 'white',
+                                    fontSize: '16px',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
+                                }}
+                            >
+                                <CheckCircle size={20} />
+                                Final Submit
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -600,6 +668,102 @@ export default function Speaking() {
                 type={alertConfig.type}
                 confirmText={alertConfig.confirmText || 'OK'}
             />
+
+            {/* Completion Popup */}
+            <AnimatePresence>
+                {showPopup && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                    }}>
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            style={{
+                                backgroundColor: 'white',
+                                borderRadius: '24px',
+                                padding: '40px',
+                                width: '90%',
+                                maxWidth: '480px',
+                                textAlign: 'center',
+                                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                            }}
+                        >
+                            <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', marginBottom: '8px' }}>Topic Completed!</h2>
+                            <p style={{ color: '#6B7280', marginBottom: '32px' }}>Here is your performance summary.</p>
+
+                            {/* Circular Score */}
+                            <div style={{ position: 'relative', width: '160px', height: '160px', margin: '0 auto 32px auto' }}>
+                                <svg width="160" height="160" style={{ transform: 'rotate(-90deg)' }}>
+                                    <circle cx="80" cy="80" r="72" stroke="#E5E7EB" strokeWidth="12" fill="none" />
+                                    <circle
+                                        cx="80" cy="80" r="72"
+                                        stroke={feedback?.score >= 70 ? "#22C55E" : (feedback?.score >= 40 ? "#EAB308" : "#EF4444")}
+                                        strokeWidth="12" fill="none"
+                                        strokeDasharray={`${2 * Math.PI * 72}`}
+                                        strokeDashoffset={`${2 * Math.PI * 72 * (1 - (feedback?.score || 0) / 100)}`}
+                                        strokeLinecap="round"
+                                        style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+                                    />
+                                </svg>
+                                <div style={{
+                                    position: 'absolute', top: '50%', left: '50%',
+                                    transform: 'translate(-50%, -50%)', textAlign: 'center',
+                                }}>
+                                    <p style={{ fontSize: '36px', fontWeight: '800', color: '#111827', margin: 0 }}>
+                                        {feedback?.score || 0}%
+                                    </p>
+                                    <p style={{ fontSize: '14px', color: '#6B7280', margin: 0, fontWeight: '500' }}>Score</p>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {prompts.findIndex(p => p.id === selectedPrompt?.id) < prompts.length - 1 && (
+                                    <button
+                                        onClick={() => { setShowPopup(false); handleNextTopic(); }}
+                                        style={{
+                                            padding: '14px 24px', borderRadius: '12px', border: 'none',
+                                            background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                                            color: 'white', fontSize: '16px', fontWeight: '600', cursor: 'pointer',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                        }}
+                                    >
+                                        Next Topic <ChevronRight size={18} />
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => window.location.href = '/dashboard'}
+                                    style={{
+                                        padding: '14px 24px', borderRadius: '12px', border: 'none',
+                                        background: (prompts.findIndex(p => p.id === selectedPrompt?.id) < prompts.length - 1) ? '#F3F4F6' : 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                                        color: (prompts.findIndex(p => p.id === selectedPrompt?.id) < prompts.length - 1) ? '#374151' : 'white', fontSize: '16px', fontWeight: '600', cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                    }}
+                                >
+                                    Next Module <ChevronRight size={18} />
+                                </button>
+                                <button
+                                    onClick={() => { setShowPopup(false); handleReset(); }}
+                                    style={{
+                                        padding: '14px 24px', borderRadius: '12px', border: '2px solid #E5E7EB',
+                                        backgroundColor: 'white',
+                                        color: '#4B5563', fontSize: '16px', fontWeight: '600', cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                    }}
+                                >
+                                    <RotateCcw size={18} /> Retest
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
