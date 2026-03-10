@@ -5,7 +5,10 @@ import {
     ChevronLeft, ChevronRight, UserCheck, UserX, Mail, Upload, Download
 } from 'lucide-react'
 import { supabase } from '../../utils/supabaseClient'
+<<<<<<< HEAD
 import Modal from '../../components/common/Modal'
+=======
+>>>>>>> 34d4fe631cf8f3cb490ebe3737e710be656e22a4
 
 export default function StudentManagement() {
     const [students, setStudents] = useState([])
@@ -15,6 +18,11 @@ export default function StudentManagement() {
     const [search, setSearch] = useState('')
     const [showModal, setShowModal] = useState(false)
     const [isImporting, setIsImporting] = useState(false)
+<<<<<<< HEAD
+=======
+    const [showPreviewModal, setShowPreviewModal] = useState(false)
+    const [previewResults, setPreviewResults] = useState({ success: [], skipped: [] })
+>>>>>>> 34d4fe631cf8f3cb490ebe3737e710be656e22a4
     const [editingStudent, setEditingStudent] = useState(null)
     const [formData, setFormData] = useState({ email: '', password: '', full_name: '', is_active: true })
     const [saving, setSaving] = useState(false)
@@ -159,6 +167,165 @@ export default function StudentManagement() {
         let p = "";
         for (let i = 0, n = charset.length; i < 12; ++i) {
             p += charset.charAt(Math.floor(Math.random() * n));
+<<<<<<< HEAD
+=======
+        }
+        return p;
+    };
+
+    // A basic hash function for dummy passwords since the backend uses bcrypt
+    // Here we're using a simple faux-hash to avoid raw passwords in DB simply to match existing dummy insertions
+    const hashPassword = async (pass) => {
+        const msgUint8 = new TextEncoder().encode(pass);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return hashHex;
+    };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setIsImporting(true);
+        try {
+            const text = await file.text();
+
+            // Basic CSV Parse: Split by newline, then split each line by comma.
+            // Replace \r to handle Windows line endings, then filter empty lines.
+            const lines = text.replace(/\r/g, '').split('\n').filter(l => l.trim().length > 0);
+            if (lines.length < 2) {
+                alert("CSV must contain a header row and at least one data row.");
+                return;
+            }
+
+            // Extract headers, remove quotes and hidden characters, and prepare for matching
+            const header = lines[0].toLowerCase().split(',').map(h => h.replace(/['"]+/g, '').replace(/[\u200B-\u200D\uFEFF]/g, '').trim());
+            const nameIdx = header.findIndex(h => h.includes('name'));
+            const emailIdx = header.findIndex(h => h.includes('email'));
+
+            if (nameIdx === -1 || emailIdx === -1) {
+                alert(`CSV header must contain 'name' and 'email' columns. Found: ${header.join(', ')}`);
+                return;
+            }
+
+            // 1. Parse rows
+            const newUsers = [];
+            for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(',').map(c => c.trim());
+                if (cols.length < Math.max(nameIdx, emailIdx) + 1) continue;
+
+                const rawName = cols[nameIdx];
+                const rawEmail = cols[emailIdx].toLowerCase();
+
+                if (rawName && rawEmail) {
+                    newUsers.push({ full_name: rawName, email: rawEmail });
+                }
+            }
+
+            // 2. Fetch existing to prevent duplicates
+            const { data: existingProfiles, error: fetchError } = await supabase
+                .from('user_profiles')
+                .select('email');
+
+            if (fetchError) throw fetchError;
+            const existingEmails = new Set(existingProfiles.map(p => p.email.toLowerCase()));
+
+            // 4. Batch Create Users directly into profiles (Bypassing Auth Rate Limit per user request)
+            let skipped = 0;
+            const insertPayload = [];
+            const errorList = [];
+
+            for (const user of newUsers) {
+                if (existingEmails.has(user.email)) {
+                    skipped++;
+                    errorList.push(`[${user.email}] Already exists.`);
+                    continue;
+                }
+
+                const tempPassword = generatePassword();
+                const fakeAuthId = crypto.randomUUID(); // Used just to satisfy the profiles table
+
+                // Insert profile (If foreign key constraint exists, this WILL fail unless the DB allows it)
+                const { error: insertError } = await supabase
+                    .from('user_profiles')
+                    .insert([{
+                        id: fakeAuthId,
+                        full_name: user.full_name,
+                        email: user.email,
+                        role: 'student'
+                    }]);
+
+                if (insertError) {
+                    console.error("Profile creation failed for:", user.email, insertError);
+                    skipped++;
+                    errorList.push(`[${user.email}] DB Error: ${insertError.message}`);
+                } else {
+                    insertPayload.push({ email: user.email, tempPassword });
+                }
+            }
+
+            if (insertPayload.length === 0 && skipped === 0) {
+                alert("CSV was empty or had no valid data.");
+                return;
+            }
+
+            // Generate CSV for credentials download
+            let csvContent = "email,password\n";
+            insertPayload.forEach(p => {
+                csvContent += `${p.email},${p.tempPassword}\n`;
+            });
+
+            // Trigger download if there are successful inserts
+            if (insertPayload.length > 0) {
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `student_credentials_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            }
+
+            // Show results in custom Modal instead of alert
+            setPreviewResults({
+                success: insertPayload,
+                skipped: errorList
+            });
+            setShowPreviewModal(true);
+            fetchStudents();
+
+        } catch (error) {
+            console.error("Error importing CSV:", error);
+            alert("Failed to import CSV: " + error.message);
+        } finally {
+            setIsImporting(false);
+            e.target.value = null; // Clear input
+        }
+    };
+
+    const downloadPreviewCSV = () => {
+        let csvContent = "email,password\n";
+        previewResults.success.forEach(p => {
+            csvContent += `${p.email},${p.tempPassword}\n`;
+        });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `student_credentials_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    };
+
+    const handleDelete = async (studentId) => {
+        if (!window.confirm('Are you sure you want to delete this student? This action cannot be undone.')) {
+            return
+>>>>>>> 34d4fe631cf8f3cb490ebe3737e710be656e22a4
         }
         return p;
     };
@@ -382,7 +549,11 @@ export default function StudentManagement() {
                     </div>
                 </div>
 
+<<<<<<< HEAD
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+=======
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+>>>>>>> 34d4fe631cf8f3cb490ebe3737e710be656e22a4
                     <input
                         type="file"
                         accept=".csv"
@@ -847,6 +1018,7 @@ export default function StudentManagement() {
                     </motion.div>
                 )}
             </AnimatePresence>
+<<<<<<< HEAD
 
             {/* Custom Modal for Alerts and Confirms */}
             <Modal
@@ -859,6 +1031,213 @@ export default function StudentManagement() {
                 type={alertConfig.type}
                 confirmText={alertConfig.confirmText || 'OK'}
             />
+=======
+            {/* Preview Results Modal */}
+            <AnimatePresence>
+                {showPreviewModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            backgroundColor: 'rgba(0,0,0,0.6)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1100,
+                            backdropFilter: 'blur(4px)',
+                            padding: '20px'
+                        }}
+                        onClick={() => setShowPreviewModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            exit={{ scale: 0.9, y: 20, opacity: 0 }}
+                            style={{
+                                backgroundColor: 'white',
+                                borderRadius: '24px',
+                                width: '100%',
+                                maxWidth: '700px',
+                                maxHeight: '90vh',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+                                overflow: 'hidden'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div style={{
+                                padding: '24px 32px',
+                                background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
+                                color: 'white',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between'
+                            }}>
+                                <div>
+                                    <h2 style={{ fontSize: '20px', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div style={{ backgroundColor: '#3B82F6', padding: '6px', borderRadius: '8px', display: 'flex' }}>
+                                            <Upload size={18} />
+                                        </div>
+                                        Import Results
+                                    </h2>
+                                    <p style={{ fontSize: '13px', color: '#94A3B8', margin: '4px 0 0 0' }}>
+                                        {previewResults.success.length} imported successfully, {previewResults.skipped.length} entries skipped.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setShowPreviewModal(false)}
+                                    style={{
+                                        padding: '8px',
+                                        borderRadius: '12px',
+                                        border: 'none',
+                                        backgroundColor: 'rgba(255,255,255,0.1)',
+                                        color: '#E2E8F0',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.2)'}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
+                                {previewResults.success.length > 0 && (
+                                    <div style={{ marginBottom: '32px' }}>
+                                        <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#1E293B', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22C55E' }}></div>
+                                            Successfully Generated Credentials
+                                        </h3>
+                                        <div style={{
+                                            backgroundColor: '#F8FAFC',
+                                            borderRadius: '16px',
+                                            border: '1px solid #E2E8F0',
+                                            overflow: 'hidden'
+                                        }}>
+                                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                                <thead>
+                                                    <tr style={{ backgroundColor: '#F1F5F9' }}>
+                                                        <th style={{ padding: '12px 20px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748B', textTransform: 'uppercase' }}>Email Address</th>
+                                                        <th style={{ padding: '12px 20px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748B', textTransform: 'uppercase' }}>Password</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {previewResults.success.map((res, i) => (
+                                                        <tr key={i} style={{ borderTop: i > 0 ? '1px solid #E2E8F0' : 'none' }}>
+                                                            <td style={{ padding: '12px 20px', fontSize: '14px', color: '#334155' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                    <Mail size={14} style={{ color: '#94A3B8' }} />
+                                                                    {res.email}
+                                                                </div>
+                                                            </td>
+                                                            <td style={{ padding: '12px 20px' }}>
+                                                                <code style={{
+                                                                    backgroundColor: '#EFF6FF',
+                                                                    color: '#2563EB',
+                                                                    padding: '4px 8px',
+                                                                    borderRadius: '6px',
+                                                                    fontSize: '13px',
+                                                                    fontWeight: '600',
+                                                                    letterSpacing: '0.5px'
+                                                                }}>{res.tempPassword}</code>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {previewResults.skipped.length > 0 && (
+                                    <div>
+                                        <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#1E293B', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#EF4444' }}></div>
+                                            Skipped Entries
+                                        </h3>
+                                        <div style={{ display: 'grid', gap: '10px' }}>
+                                            {previewResults.skipped.map((err, i) => (
+                                                <div key={i} style={{
+                                                    padding: '12px 16px',
+                                                    borderRadius: '12px',
+                                                    backgroundColor: '#FFF1F2',
+                                                    border: '1px solid #FECDD3',
+                                                    color: '#9F1239',
+                                                    fontSize: '13px',
+                                                    display: 'flex',
+                                                    alignItems: 'flex-start',
+                                                    gap: '10px'
+                                                }}>
+                                                    <X size={16} style={{ marginTop: '1px', flexShrink: 0 }} />
+                                                    {err}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Footer */}
+                            <div style={{
+                                padding: '24px 32px',
+                                backgroundColor: '#F8FAFC',
+                                borderTop: '1px solid #E2E8F0',
+                                display: 'flex',
+                                gap: '12px',
+                                justifyContent: 'flex-end'
+                            }}>
+                                <button
+                                    onClick={() => setShowPreviewModal(false)}
+                                    style={{
+                                        padding: '10px 20px',
+                                        borderRadius: '12px',
+                                        border: '1px solid #E2E8F0',
+                                        backgroundColor: 'white',
+                                        color: '#475569',
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Close
+                                </button>
+                                {previewResults.success.length > 0 && (
+                                    <button
+                                        onClick={downloadPreviewCSV}
+                                        style={{
+                                            padding: '10px 20px',
+                                            borderRadius: '12px',
+                                            border: 'none',
+                                            background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                                            color: 'white',
+                                            fontSize: '14px',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                                        }}
+                                    >
+                                        <Download size={18} />
+                                        Download CSV
+                                    </button>
+                                )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+>>>>>>> 34d4fe631cf8f3cb490ebe3737e710be656e22a4
         </div>
     )
 }

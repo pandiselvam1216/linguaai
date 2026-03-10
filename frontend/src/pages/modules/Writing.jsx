@@ -13,6 +13,15 @@ export default function Writing() {
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
     const [timeElapsed, setTimeElapsed] = useState(0)
+    const [showPopup, setShowPopup] = useState(false);
+    const [completedTopics, setCompletedTopics] = useState(() => {
+        const saved = localStorage.getItem('neuraLingua_completed_writing');
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('neuraLingua_completed_writing', JSON.stringify(completedTopics));
+    }, [completedTopics]);
 
     useEffect(() => {
         fetchPrompts()
@@ -69,6 +78,9 @@ export default function Writing() {
                 result.aiFeedback = aiFeedback
             }
             setFeedback(result)
+            if (!completedTopics.includes(selectedPrompt?.id)) {
+                setCompletedTopics(prev => [...prev, selectedPrompt.id])
+            }
         } catch (error) {
             console.error('Failed to submit:', error)
         } finally {
@@ -244,6 +256,9 @@ export default function Writing() {
                                 }}>
                                     {prompt.word_limit || minWords}+ words
                                 </p>
+                                {completedTopics.includes(prompt.id) && (
+                                    <CheckCircle size={16} style={{ color: '#22C55E', position: 'absolute', right: '12px', top: '12px' }} />
+                                )}
                             </motion.button>
                         ))}
                     </div>
@@ -442,9 +457,37 @@ export default function Writing() {
                                     boxShadow: (wordCount >= minWords && !feedback) ? '0 4px 14px rgba(249, 115, 22, 0.4)' : 'none',
                                 }}
                             >
-                                <Send size={16} />
-                                {submitting ? 'Analyzing...' : 'Get Feedback'}
+                                {submitting ? (
+                                    <>Analyzing...</>
+                                ) : (
+                                    <>
+                                        <Sparkles size={16} />
+                                        Analyze Writing
+                                    </>
+                                )}
                             </button>
+
+                            {feedback && (
+                                <button
+                                    onClick={() => setShowPopup(true)}
+                                    style={{
+                                        padding: '12px 24px',
+                                        borderRadius: '10px',
+                                        border: 'none',
+                                        background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                                        color: 'white',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        boxShadow: '0 4px 14px rgba(34, 197, 94, 0.4)',
+                                    }}
+                                >
+                                    <Award size={16} />
+                                    Final Submit
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -572,6 +615,129 @@ export default function Writing() {
                     </AnimatePresence>
                 </div>
             </div>
+
+            {/* Completion Popup */}
+            <AnimatePresence>
+                {showPopup && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                            backdropFilter: 'blur(4px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1000,
+                            padding: '20px',
+                        }}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            style={{
+                                backgroundColor: 'white',
+                                borderRadius: '24px',
+                                padding: '40px',
+                                maxWidth: '400px',
+                                width: '100%',
+                                textAlign: 'center',
+                                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+                            }}
+                        >
+                            <div style={{
+                                width: '80px',
+                                height: '80px',
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto 24px',
+                                color: 'white',
+                            }}>
+                                <Award size={40} />
+                            </div>
+
+                            <h2 style={{ fontSize: '28px', fontWeight: '800', color: '#111827', marginBottom: '8px' }}>
+                                Module Complete!
+                            </h2>
+                            <p style={{ color: '#6B7280', marginBottom: '32px' }}>
+                                You've finished the Writing practice session.
+                            </p>
+
+                            <div style={{
+                                marginBottom: '32px',
+                                padding: '20px',
+                                backgroundColor: '#F8FAFC',
+                                borderRadius: '16px',
+                            }}>
+                                <p style={{ fontSize: '14px', color: '#64748B', marginBottom: '4px' }}>Draft Score</p>
+                                <p style={{ fontSize: '36px', fontWeight: '800', color: '#F97316', margin: 0 }}>
+                                    {feedback?.score || 0}%
+                                </p>
+                            </div>
+
+                            <div style={{ display: 'grid', gap: '12px' }}>
+                                <button
+                                    onClick={() => {
+                                        setShowPopup(false);
+                                        setText('');
+                                        setFeedback(null);
+                                    }}
+                                    style={{
+                                        padding: '14px',
+                                        borderRadius: '12px',
+                                        border: '2px solid #E2E8F0',
+                                        background: 'white',
+                                        color: '#475569',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    Retest
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowPopup(false);
+                                        setSelectedPrompt(null);
+                                        setText('');
+                                        setFeedback(null);
+                                    }}
+                                    style={{
+                                        padding: '14px',
+                                        borderRadius: '12px',
+                                        border: 'none',
+                                        background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
+                                        color: 'white',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    Next Topic
+                                </button>
+                                <button
+                                    onClick={() => window.location.href = '/dashboard'}
+                                    style={{
+                                        padding: '14px',
+                                        borderRadius: '12px',
+                                        border: 'none',
+                                        background: '#F1F5F9',
+                                        color: '#475569',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    Next Module
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }

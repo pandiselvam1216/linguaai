@@ -13,6 +13,15 @@ export default function Reading() {
     const [results, setResults] = useState(null)
     const [loading, setLoading] = useState(true)
     const [timeLeft, setTimeLeft] = useState(600)
+    const [showPopup, setShowPopup] = useState(false);
+    const [completedPassages, setCompletedPassages] = useState(() => {
+        const saved = localStorage.getItem('neuraLingua_completed_reading');
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('neuraLingua_completed_reading', JSON.stringify(completedPassages));
+    }, [completedPassages]);
 
     // PDF viewer state
     const [pdfUrl, setPdfUrl] = useState(null)      // blob URL of loaded PDF
@@ -79,6 +88,7 @@ export default function Reading() {
             })
             setResults(response.data)
             saveModuleScore('reading', response.data.score, 600 - timeLeft)
+            markAsCompleted()
         } catch (error) {
             console.error('Failed to submit:', error)
             const fallbackResult = {
@@ -89,6 +99,7 @@ export default function Reading() {
             }
             setResults(fallbackResult)
             saveModuleScore('reading', fallbackResult.score, 600 - timeLeft)
+            markAsCompleted()
         }
     }
 
@@ -99,6 +110,12 @@ export default function Reading() {
             setSubmitted(false)
             setResults(null)
             setTimeLeft(600)
+        }
+    }
+
+    const markAsCompleted = () => {
+        if (!completedPassages.includes(currentIndex)) {
+            setCompletedPassages(prev => [...prev, currentIndex])
         }
     }
 
@@ -254,6 +271,7 @@ export default function Reading() {
                                 <BookOpen size={18} style={{ color: '#8B5CF6' }} />
                                 <h2 style={{ fontSize: '15px', fontWeight: '600', color: '#111827', margin: 0 }}>
                                     {currentPassage.title}
+                                    {completedPassages.includes(currentIndex) && <CheckCircle size={16} style={{ color: '#22C55E' }} />}
                                 </h2>
                             </div>
                             <span style={{ fontSize: '12px', color: '#6B7280', padding: '4px 10px', backgroundColor: '#F3F4F6', borderRadius: '6px' }}>
@@ -575,7 +593,7 @@ export default function Reading() {
                                     <Send size={18} />
                                     Submit Answers
                                 </button>
-                            ) : currentIndex < passages.length - 1 && (
+                            ) : currentIndex < passages.length - 1 ? (
                                 <button
                                     onClick={handleNext}
                                     style={{
@@ -596,10 +614,154 @@ export default function Reading() {
                                     Next Passage
                                     <ChevronRight size={18} />
                                 </button>
+                            ) : (
+                                <button
+                                    onClick={() => setShowPopup(true)}
+                                    style={{
+                                        padding: '14px 28px',
+                                        borderRadius: '10px',
+                                        border: 'none',
+                                        background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                                        color: 'white',
+                                        fontSize: '15px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        boxShadow: '0 4px 14px rgba(34, 197, 94, 0.4)',
+                                    }}
+                                >
+                                    <Award size={18} />
+                                    Final Submit
+                                </button>
                             )}
                         </div>
                     </div>
                 </motion.div>
+
+                {/* Completion Popup */}
+                <AnimatePresence>
+                    {showPopup && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            style={{
+                                position: 'fixed',
+                                inset: 0,
+                                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                backdropFilter: 'blur(4px)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 1000,
+                                padding: '20px',
+                            }}
+                        >
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                style={{
+                                    backgroundColor: 'white',
+                                    borderRadius: '24px',
+                                    padding: '40px',
+                                    maxWidth: '400px',
+                                    width: '100%',
+                                    textAlign: 'center',
+                                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+                                }}
+                            >
+                                <div style={{
+                                    width: '80px',
+                                    height: '80px',
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    margin: '0 auto 24px',
+                                    color: 'white',
+                                }}>
+                                    <Award size={40} />
+                                </div>
+
+                                <h2 style={{ fontSize: '28px', fontWeight: '800', color: '#111827', marginBottom: '8px' }}>
+                                    Module Complete!
+                                </h2>
+                                <p style={{ color: '#6B7280', marginBottom: '32px' }}>
+                                    You've finished the Reading practice session.
+                                </p>
+
+                                <div style={{
+                                    marginBottom: '32px',
+                                    padding: '20px',
+                                    backgroundColor: '#F8FAFC',
+                                    borderRadius: '16px',
+                                }}>
+                                    <p style={{ fontSize: '14px', color: '#64748B', marginBottom: '4px' }}>Last Score</p>
+                                    <p style={{ fontSize: '36px', fontWeight: '800', color: '#8B5CF6', margin: 0 }}>
+                                        {results?.score || 0}%
+                                    </p>
+                                </div>
+
+                                <div style={{ display: 'grid', gap: '12px' }}>
+                                    <button
+                                        onClick={() => {
+                                            setShowPopup(false);
+                                            setCurrentIndex(0);
+                                            setAnswers({});
+                                            setSubmitted(false);
+                                            setResults(null);
+                                        }}
+                                        style={{
+                                            padding: '14px',
+                                            borderRadius: '12px',
+                                            border: '2px solid #E2E8F0',
+                                            background: 'white',
+                                            color: '#475569',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        Retest
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowPopup(false);
+                                            handleNext();
+                                        }}
+                                        style={{
+                                            padding: '14px',
+                                            borderRadius: '12px',
+                                            border: 'none',
+                                            background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
+                                            color: 'white',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        Next Topic
+                                    </button>
+                                    <button
+                                        onClick={() => window.location.href = '/dashboard'}
+                                        style={{
+                                            padding: '14px',
+                                            borderRadius: '12px',
+                                            border: 'none',
+                                            background: '#F1F5F9',
+                                            color: '#475569',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        Next Module
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     )
