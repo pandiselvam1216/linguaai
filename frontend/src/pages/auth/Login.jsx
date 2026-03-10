@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import logoImg from '../../assets/logo.png'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react'
@@ -13,7 +14,7 @@ export default function Login() {
     const navigate = useNavigate()
     const { login } = useAuth()
 
-    
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError('')
@@ -51,18 +52,16 @@ export default function Login() {
                     textDecoration: 'none',
                     marginBottom: '32px',
                 }}>
-                    <div style={{
-                        width: '44px',
-                        height: '44px',
-                        borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #1A73E8 0%, #4285F4 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 4px 12px rgba(26, 115, 232, 0.3)',
-                    }}>
-                        <span style={{ color: 'white', fontWeight: 'bold', fontSize: '20px' }}>N</span>
-                    </div>
+                    <img
+                        src={logoImg}
+                        alt="NeuraLingua Logo"
+                        style={{
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: '12px',
+                            objectFit: 'contain',
+                        }}
+                    />
                     <span style={{ fontWeight: '600', fontSize: '24px', color: '#111827' }}>NeuraLingua</span>
                 </Link>
 

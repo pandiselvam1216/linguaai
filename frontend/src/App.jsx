@@ -11,7 +11,6 @@ import Writing from './pages/modules/Writing'
 import Grammar from './pages/modules/Grammar'
 import Vocabulary from './pages/modules/Vocabulary'
 import CriticalThinking from './pages/modules/CriticalThinking'
-import Pricing from './pages/Pricing'
 import Landing from './pages/Landing'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import StudentManagement from './pages/admin/StudentManagement'
@@ -40,7 +39,6 @@ export default function App() {
       <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/pricing" element={<Pricing />} />
 
       <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
         <Route path="dashboard" element={<Dashboard />} />

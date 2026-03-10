@@ -1,4 +1,7 @@
 import { Link } from 'react-router-dom'
+import logoImg from '../assets/logo.png'
+import neuraGlobalIcon from '../assets/Neura Global Icon.png'
+import './Landing.css'
 import { motion } from 'framer-motion'
 import {
     ArrowRight, Headphones, Mic, BookOpen, Edit3,
@@ -54,40 +57,38 @@ export default function Landing() {
                 }}>
                     {/* Logo */}
                     <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
-                        <div style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '10px',
-                            background: 'linear-gradient(135deg, #1A73E8 0%, #4285F4 100%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 2px 8px rgba(26, 115, 232, 0.3)',
-                        }}>
-                            <span style={{ color: 'white', fontWeight: 'bold', fontSize: '18px' }}>N</span>
-                        </div>
+                        <img
+                            src={logoImg}
+                            alt="NeuraLingua Logo"
+                            style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '10px',
+                                objectFit: 'contain',
+                            }}
+                        />
                         <span style={{ fontWeight: '600', fontSize: '20px', color: '#1F2937' }}>NeuraLingua</span>
                     </Link>
 
                     {/* Nav Links */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+                    <div className="landing-nav-links">
                         <a href="#features" style={{ color: '#6B7280', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}>Features</a>
                         <a href="#modules" style={{ color: '#6B7280', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}>Modules</a>
-                        <Link to="/pricing" style={{ color: '#6B7280', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}>Pricing</Link>
                     </div>
 
                     {/* Auth Buttons */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <Link to="/login" style={{
+                    <div className="landing-nav-auth" style={{ gap: '12px' }}>
+                        <Link to="/login" className="landing-signin-link" style={{
                             color: '#374151',
                             textDecoration: 'none',
                             fontSize: '14px',
                             fontWeight: '500',
                             padding: '10px 20px',
+                            whiteSpace: 'nowrap',
                         }}>
                             Sign in
                         </Link>
-                        <Link to="/register" style={{
+                        <Link to="/register" className="landing-nav-getstarted" style={{
                             backgroundColor: '#1A73E8',
                             color: 'white',
                             textDecoration: 'none',
@@ -96,6 +97,7 @@ export default function Landing() {
                             padding: '10px 24px',
                             borderRadius: '8px',
                             boxShadow: '0 2px 8px rgba(26, 115, 232, 0.3)',
+                            whiteSpace: 'nowrap',
                         }}>
                             Get Started
                         </Link>
@@ -130,33 +132,19 @@ export default function Landing() {
                         </div>
 
                         {/* Headline */}
-                        <h1 style={{
-                            fontSize: '56px',
-                            fontWeight: '700',
-                            color: '#111827',
-                            lineHeight: '1.1',
-                            marginBottom: '24px',
-                            maxWidth: '800px',
-                            margin: '0 auto 24px',
-                        }}>
+                        <h1 className="landing-hero-title" style={{ marginBottom: '24px' }}>
                             Master English with{' '}
                             <span style={{ color: '#1A73E8' }}>Intelligent AI</span>
                         </h1>
 
                         {/* Subheadline */}
-                        <p style={{
-                            fontSize: '20px',
-                            color: '#6B7280',
-                            lineHeight: '1.6',
-                            maxWidth: '600px',
-                            margin: '0 auto 40px',
-                        }}>
+                        <p className="landing-hero-subtitle" style={{ margin: '0 auto 40px' }}>
                             Comprehensive English training for schools and colleges.
                             Develop all language skills with personalized AI feedback.
                         </p>
 
                         {/* CTA Buttons */}
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '60px' }}>
+                        <div className="landing-hero-buttons">
                             <Link to="/register" style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -195,28 +183,20 @@ export default function Landing() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3, duration: 0.6 }}
-                        style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(3, 1fr)',
-                            gap: '48px',
-                            maxWidth: '700px',
-                            margin: '0 auto',
-                            padding: '40px 0',
-                            borderTop: '1px solid #E5E7EB',
-                        }}
+                        className="landing-stats-grid"
                     >
                         <div style={{ textAlign: 'center' }}>
-                            <Users size={24} style={{ color: '#1A73E8', marginBottom: '12px' }} />
+                            <Users size={24} style={{ color: '#1A73E8', marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
                             <div style={{ fontSize: '36px', fontWeight: '700', color: '#111827' }}>50,000+</div>
                             <div style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px' }}>Active Students</div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
-                            <Award size={24} style={{ color: '#1A73E8', marginBottom: '12px' }} />
+                            <Award size={24} style={{ color: '#1A73E8', marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
                             <div style={{ fontSize: '36px', fontWeight: '700', color: '#111827' }}>500+</div>
                             <div style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px' }}>Institutions</div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
-                            <Star size={24} style={{ color: '#F59E0B', marginBottom: '12px' }} />
+                            <Star size={24} style={{ color: '#F59E0B', marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
                             <div style={{ fontSize: '36px', fontWeight: '700', color: '#111827' }}>4.9/5</div>
                             <div style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px' }}>User Rating</div>
                         </div>
@@ -236,11 +216,7 @@ export default function Landing() {
                         </p>
                     </div>
 
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
-                        gap: '24px',
-                    }}>
+                    <div className="landing-features-grid">
                         {features.map((feature, i) => (
                             <motion.div
                                 key={i}
@@ -292,11 +268,7 @@ export default function Landing() {
                         </p>
                     </div>
 
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(7, 1fr)',
-                        gap: '16px',
-                    }}>
+                    <div className="landing-modules-grid">
                         {modules.map((mod, i) => (
                             <motion.div
                                 key={i}
@@ -338,7 +310,89 @@ export default function Landing() {
                 </div>
             </section>
 
+            {/* Comparison Table Section */}
+            <section style={{ padding: '80px 0', backgroundColor: '#FFFFFF' }}>
+                <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+                        <h2 style={{ fontSize: '40px', fontWeight: '700', color: '#111827', marginBottom: '16px' }}>
+                            NeuraLingua vs Existing Platforms
+                        </h2>
+                        <p style={{ fontSize: '18px', color: '#6B7280', maxWidth: '520px', margin: '0 auto' }}>
+                            See how we stack up against the competition
+                        </p>
+                    </div>
+
+                    <div className="landing-comparison-wrapper">
+                        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#1a1a2e' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                    {['Feature', 'NeuraLingua', 'Duolingo', 'Babbel', 'ELSA Speak'].map((h, i) => (
+                                        <th key={i} style={{
+                                            padding: '20px 24px',
+                                            textAlign: 'left',
+                                            fontSize: '14px',
+                                            fontWeight: '700',
+                                            color: i === 0 ? '#fff' : i === 1 ? '#fff' : '#f87171',
+                                            backgroundColor: i === 1 ? 'rgba(26,115,232,0.2)' : 'transparent',
+                                            borderRight: i < 4 ? '1px solid rgba(255,255,255,0.08)' : 'none',
+                                        }}>{h}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {[
+                                    ['Target Users', 'Schools + Colleges', 'General learners', 'Adults', 'Individuals'],
+                                    ['Communication Skills', 'Full training', { text: 'Limited', color: '#f87171' }, { text: 'Limited', color: '#f87171' }, 'Only speaking'],
+                                    ['AI Pronunciation Feedback', true, 'Basic', false, true],
+                                    ['AI Writing Evaluation', true, false, false, false],
+                                    ['Reading & Comprehension', true, 'Limited', { text: 'Limited', color: '#f87171' }, false],
+                                    ['Grammar Training', true, 'Basic', 'Strong', false],
+                                    ['Critical Thinking', true, false, false, false],
+                                    ['Interview Preparation', true, false, false, false],
+                                    ['Presentation Skills', true, false, false, false],
+                                    ['Group Discussion Practice', true, false, false, false],
+                                    ['Placement Communication', true, false, false, false],
+                                    ['College Dashboard', true, false, false, false],
+                                ].map((row, rowIdx) => (
+                                    <tr key={rowIdx} style={{
+                                        borderBottom: '1px solid rgba(255,255,255,0.06)',
+                                        backgroundColor: rowIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)',
+                                    }}>
+                                        {row.map((cell, colIdx) => (
+                                            <td key={colIdx} style={{
+                                                padding: '16px 24px',
+                                                fontSize: '14px',
+                                                color: colIdx === 0 ? '#e5e7eb' : '#9ca3af',
+                                                fontWeight: colIdx === 0 ? '500' : '400',
+                                                backgroundColor: colIdx === 1 ? 'rgba(26,115,232,0.1)' : 'transparent',
+                                                borderRight: colIdx < 4 ? '1px solid rgba(255,255,255,0.08)' : 'none',
+                                            }}>
+                                                {cell === true ? (
+                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#4ade80' }}>
+                                                        <span style={{
+                                                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                            width: '20px', height: '20px', borderRadius: '4px', backgroundColor: '#16a34a',
+                                                        }}>✓</span> Yes
+                                                    </span>
+                                                ) : cell === false ? (
+                                                    <span style={{ color: '#f87171', fontSize: '18px', fontWeight: 'bold' }}>✕</span>
+                                                ) : typeof cell === 'object' && cell.text ? (
+                                                    <span style={{ color: cell.color }}>{cell.text}</span>
+                                                ) : (
+                                                    <span style={{ color: colIdx === 1 ? '#93c5fd' : '#9ca3af' }}>{cell}</span>
+                                                )}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             {/* CTA Section */}
+
             <section style={{ padding: '80px 0', backgroundColor: '#F9FAFB' }}>
                 <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 24px' }}>
                     <div style={{
@@ -354,7 +408,7 @@ export default function Landing() {
                         <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.9)', marginBottom: '32px', maxWidth: '400px', margin: '0 auto 32px' }}>
                             Join hundreds of institutions improving student outcomes with NeuraLingua
                         </p>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+                        <div className="landing-cta-buttons">
                             <Link to="/register" style={{
                                 backgroundColor: 'white',
                                 color: '#1A73E8',
@@ -385,36 +439,42 @@ export default function Landing() {
 
             {/* Footer */}
             <footer style={{ padding: '40px 0', backgroundColor: '#FFFFFF', borderTop: '1px solid #E5E7EB' }}>
-                <div style={{
-                    maxWidth: '1200px',
-                    margin: '0 auto',
-                    padding: '0 24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                }}>
+                <div className="landing-footer-inner" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '8px',
-                            backgroundColor: '#1A73E8',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            <span style={{ color: 'white', fontWeight: 'bold', fontSize: '14px' }}>N</span>
-                        </div>
+                        <img
+                            src={logoImg}
+                            alt="NeuraLingua Logo"
+                            style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '8px',
+                                objectFit: 'contain',
+                            }}
+                        />
                         <span style={{ fontWeight: '600', fontSize: '16px', color: '#374151' }}>NeuraLingua</span>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '32px' }}>
+                    <div className="landing-footer-links">
                         <a href="#" style={{ color: '#6B7280', textDecoration: 'none', fontSize: '14px' }}>Privacy</a>
                         <a href="#" style={{ color: '#6B7280', textDecoration: 'none', fontSize: '14px' }}>Terms</a>
                         <a href="#" style={{ color: '#6B7280', textDecoration: 'none', fontSize: '14px' }}>Contact</a>
                     </div>
 
-                    <p style={{ fontSize: '14px', color: '#9CA3AF' }}>
+                    {/* NeuraGlobal Branding */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '12px', color: '#9CA3AF' }}>Powered by</span>
+                        <img
+                            src={neuraGlobalIcon}
+                            alt="NeuraGlobal"
+                            style={{
+                                height: '22px',
+                                objectFit: 'contain',
+                            }}
+                        />
+                        <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: '500' }}>NeuraGlobal</span>
+                    </div>
+
+                    <p style={{ fontSize: '12px', color: '#9CA3AF', margin: 0 }}>
                         © 2026 NeuraGlobal. All rights reserved.
                     </p>
                 </div>

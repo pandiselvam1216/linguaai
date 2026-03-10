@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import logoImg from '../../assets/logo.png'
 import { motion } from 'framer-motion'
 import {
     LayoutDashboard, Headphones, Mic, BookOpen, Edit3,
@@ -58,33 +59,32 @@ export default function Sidebar({ isOpen, onToggle, isMobile }) {
             }}>
                 {isOpen ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                        <div style={{
-                            width: '40px',
-                            height: '40px',
-                            flexShrink: 0,
-                            borderRadius: '10px',
-                            background: 'linear-gradient(135deg, #1A73E8 0%, #4285F4 100%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            <span style={{ color: 'white', fontWeight: 'bold', fontSize: '18px' }}>N</span>
-                        </div>
+                        <img
+                            src={logoImg}
+                            alt="NeuraLingua Logo"
+                            style={{
+                                width: '40px',
+                                height: '40px',
+                                flexShrink: 0,
+                                borderRadius: '10px',
+                                objectFit: 'contain',
+                            }}
+                        />
                         <span style={{ fontWeight: '600', fontSize: '18px', color: '#111827', whiteSpace: 'nowrap' }}>NeuraLingua</span>
                     </div>
                 ) : (
-                    <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #1A73E8 0%, #4285F4 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        margin: '0 auto',
-                    }}>
-                        <span style={{ color: 'white', fontWeight: 'bold', fontSize: '18px' }}>N</span>
-                    </div>
+                    <img
+                        src={logoImg}
+                        alt="NeuraLingua Logo"
+                        style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '10px',
+                            objectFit: 'contain',
+                            margin: '0 auto',
+                            display: 'block',
+                        }}
+                    />
                 )}
                 {isOpen && (
                     <button
