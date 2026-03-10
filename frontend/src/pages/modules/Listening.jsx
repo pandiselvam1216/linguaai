@@ -398,19 +398,13 @@ export default function Listening() {
                 </div>
 
                 {/* Main Content */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '32px' }}>
                     {/* Prompt Card */}
                     {currentQuestion && (
                         <motion.div
                             key={`prompt-${currentQuestion.id}`}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            style={{
-                                backgroundColor: 'white',
-                                borderRadius: '16px',
-                                padding: '24px',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                            }}
                         >
                             <div style={{
                                 display: 'flex',
