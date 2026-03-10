@@ -882,7 +882,7 @@ export default function Vocabulary() {
                                             </div>
                                         ) : (
                                             <div>
-                                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px', paddingBottom: '24px', borderBottom: '1px solid #E5E7EB' }}>
+                                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px', paddingBottom: '24px', borderBottom: '1px solid #E5E7EB', flexWrap: 'wrap', gap: '16px' }}>
                                                     <div>
                                                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px' }}>
                                                             <h2 style={{ fontSize: '42px', fontWeight: '800', color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>
@@ -984,7 +984,7 @@ export default function Vocabulary() {
                                             whileHover={{ y: -4, boxShadow: '0 10px 20px rgba(0,0,0,0.05)' }}
                                             onClick={() => { setSearchWord(word.word); handleSearch({ preventDefault: () => { } }) }}
                                         >
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', flexWrap: 'wrap', gap: '12px' }}>
                                                 <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', margin: 0 }}>{word.word}</h3>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); deleteWord(word.id) }}

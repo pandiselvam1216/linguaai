@@ -318,6 +318,8 @@ export default function Speaking() {
                                 alignItems: 'flex-start',
                                 justifyContent: 'space-between',
                                 marginBottom: '16px',
+                                flexWrap: 'wrap',
+                                gap: '12px'
                             }}>
                                 <h2 style={{
                                     fontSize: '20px',

@@ -272,7 +272,9 @@ export default function CriticalThinking() {
                                 <div style={{
                                     display: 'flex',
                                     justifyContent: 'space-between',
-                                    alignItems: 'center'
+                                    alignItems: 'center',
+                                    flexWrap: 'wrap',
+                                    gap: '16px'
                                 }}>
                                     <div style={{
                                         display: 'flex',
