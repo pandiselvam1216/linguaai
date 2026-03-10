@@ -9,6 +9,7 @@ import { supabase } from '../../utils/supabaseClient'
 export default function AdminDashboard() {
     const [analytics, setAnalytics] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [timeframe, setTimeframe] = useState('7')
 
     useEffect(() => {
         fetchAnalytics()
@@ -62,6 +63,39 @@ export default function AdminDashboard() {
             const recentMonthPasses = recentMonthScoresList.filter(s => s.score > 0).length
             const completionRate = recentMonthScores > 0 ? Math.round((recentMonthPasses / recentMonthScores) * 100) : 0
 
+            // Helper to generate chart data for N days
+            const generateChartData = (days) => {
+                const data = [];
+                const scoresList = scores || [];
+                const maxDate = new Date();
+                maxDate.setHours(23, 59, 59, 999);
+
+                for (let i = days - 1; i >= 0; i--) {
+                    const date = new Date(maxDate);
+                    date.setDate(date.getDate() - i);
+
+                    const startOfDay = new Date(date);
+                    startOfDay.setHours(0, 0, 0, 0);
+                    const endOfDay = new Date(date);
+                    endOfDay.setHours(23, 59, 59, 999);
+
+                    const dayScores = scoresList.filter(s => {
+                        const sDate = new Date(s.created_at);
+                        return sDate >= startOfDay && sDate <= endOfDay;
+                    }).length;
+
+                    data.push({
+                        label: i === 0 && days > 7 ? 'Today' : (days === 7 ? date.toLocaleDateString('en-US', { weekday: 'short' }) : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+                        value: dayScores
+                    });
+                }
+                return data;
+            };
+
+            const chartData7 = generateChartData(7);
+            const chartData30 = generateChartData(30);
+            const chartData90 = generateChartData(90);
+
             setAnalytics({
                 users: {
                     total: users?.length || 0,
@@ -77,7 +111,12 @@ export default function AdminDashboard() {
                     average_score,
                     completion_rate: completionRate
                 },
-                modules: []
+                modules: [],
+                chart: {
+                    data7: chartData7,
+                    data30: chartData30,
+                    data90: chartData90
+                }
             })
         } catch (error) {
             console.error('Failed to fetch analytics:', error)
@@ -216,49 +255,73 @@ export default function AdminDashboard() {
                                 Platform Activity
                             </h3>
                         </div>
-                        <select style={{
-                            padding: '8px 12px',
-                            borderRadius: '8px',
-                            border: '1px solid #E5E7EB',
-                            fontSize: '14px',
-                            color: '#374151',
-                            backgroundColor: 'white',
-                        }}>
-                            <option>Last 7 days</option>
-                            <option>Last 30 days</option>
-                            <option>Last 90 days</option>
+                        <select
+                            value={timeframe}
+                            onChange={(e) => setTimeframe(e.target.value)}
+                            style={{
+                                padding: '8px 12px',
+                                borderRadius: '8px',
+                                border: '1px solid #E5E7EB',
+                                fontSize: '14px',
+                                color: '#374151',
+                                backgroundColor: 'white',
+                                cursor: 'pointer',
+                            }}>
+                            <option value="7">Last 7 days</option>
+                            <option value="30">Last 30 days</option>
+                            <option value="90">Last 90 days</option>
                         </select>
                     </div>
 
-                    {/* Simple Bar Chart */}
+                    {/* Bar Chart */}
                     <div style={{
                         display: 'flex',
                         alignItems: 'flex-end',
-                        gap: '16px',
+                        gap: timeframe === '90' ? '2px' : timeframe === '30' ? '4px' : '16px',
                         height: '200px',
                         paddingBottom: '40px',
                     }}>
-                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => {
-                            const height = 40 + Math.random() * 120
+                        {analytics?.chart?.[`data${timeframe}`]?.map((dataPoint, idx) => {
+                            const maxVal = Math.max(...(analytics.chart[`data${timeframe}`].map(d => d.value) || [1]));
+                            // Minimum height of 4px just to show there's a day, 
+                            // otherwise scale up to 160px proportionally
+                            const height = dataPoint.value === 0 ? 0 : Math.max(4, (dataPoint.value / (maxVal || 1)) * 160);
+
+                            // Determine if we should show the label based on timeframe to avoid crowding
+                            let showLabel = true;
+                            if (timeframe === '30' && idx % 3 !== 0 && idx !== 29) showLabel = false;
+                            if (timeframe === '90' && idx % 10 !== 0 && idx !== 89) showLabel = false;
+
                             return (
-                                <div key={day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+                                    {/* Tooltip on hover can be added here if needed */}
                                     <motion.div
                                         initial={{ height: 0 }}
                                         animate={{ height: `${height}px` }}
-                                        transition={{ delay: 0.5 + idx * 0.1 }}
+                                        transition={{ delay: 0.1 + (idx % 10) * 0.05 }}
+                                        title={`${dataPoint.label}: ${dataPoint.value} sessions`}
                                         style={{
                                             width: '100%',
-                                            background: 'linear-gradient(180deg, #3B82F6 0%, #60A5FA 100%)',
-                                            borderRadius: '6px 6px 0 0',
+                                            background: dataPoint.value > 0 ? 'linear-gradient(180deg, #3B82F6 0%, #60A5FA 100%)' : '#F3F4F6',
+                                            borderRadius: timeframe === '90' ? '2px 2px 0 0' : '6px 6px 0 0',
+                                            minHeight: dataPoint.value > 0 ? '4px' : '0px',
+                                            cursor: 'pointer'
                                         }}
                                     />
-                                    <span style={{
-                                        fontSize: '12px',
-                                        color: '#6B7280',
-                                        marginTop: '8px',
-                                    }}>
-                                        {day}
-                                    </span>
+                                    {showLabel ? (
+                                        <span style={{
+                                            fontSize: timeframe === '90' ? '10px' : '12px',
+                                            color: '#6B7280',
+                                            marginTop: '8px',
+                                            whiteSpace: 'nowrap',
+                                            transform: timeframe === '90' ? 'rotate(-45deg)' : 'none',
+                                            transformOrigin: 'top left'
+                                        }}>
+                                            {dataPoint.label}
+                                        </span>
+                                    ) : (
+                                        <span style={{ height: '22px', marginTop: '8px' }}></span>
+                                    )}
                                 </div>
                             )
                         })}

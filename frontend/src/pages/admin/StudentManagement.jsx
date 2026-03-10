@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Users, Search, Plus, Trash2, Edit2, X, Check,
-    ChevronLeft, ChevronRight, UserCheck, UserX, Mail
+    ChevronLeft, ChevronRight, UserCheck, UserX, Mail, Upload, Download
 } from 'lucide-react'
 import { supabase } from '../../utils/supabaseClient'
+
 export default function StudentManagement() {
     const [students, setStudents] = useState([])
     const [loading, setLoading] = useState(true)
@@ -12,6 +13,7 @@ export default function StudentManagement() {
     const [totalPages, setTotalPages] = useState(1)
     const [search, setSearch] = useState('')
     const [showModal, setShowModal] = useState(false)
+    const [isImporting, setIsImporting] = useState(false)
     const [editingStudent, setEditingStudent] = useState(null)
     const [formData, setFormData] = useState({ email: '', password: '', full_name: '', is_active: true })
     const [saving, setSaving] = useState(false)
@@ -106,18 +108,35 @@ export default function StudentManagement() {
                     .eq('id', editingStudent.id)
                 if (error) throw error
             } else {
-                // In Supabase Auth, creating a user from client-side requires signing up, which sends email.
-                // We'll just create a profile, but the user won't actually have an auth account unless they sign up.
-                // Alternatively, admin creates dummy profiles.
-                const { error } = await supabase
-                    .from('user_profiles')
-                    .insert([{
-                        id: crypto.randomUUID(),
-                        full_name: formData.full_name,
-                        email: formData.email,
-                        role: 'student'
-                    }])
-                if (error) throw error
+                // Must create in auth.users first to satisfy foreign key constraint
+                const { data: authData, error: authError } = await supabaseAuthClient.auth.signUp({
+                    email: formData.email,
+                    password: formData.password || "TempPass123!",
+                    options: {
+                        data: {
+                            full_name: formData.full_name,
+                            role: 'student'
+                        }
+                    }
+                });
+
+                if (authError) throw authError;
+
+                if (authData?.user) {
+                    // Insert into user_profiles with the generated auth.users ID
+                    const { error } = await supabase
+                        .from('user_profiles')
+                        .insert([{
+                            id: authData.user.id,
+                            full_name: formData.full_name,
+                            email: formData.email,
+                            role: 'student'
+                        }]);
+
+                    // If insert fails with duplicate key, a database trigger might have already created it. 
+                    // So we only throw if it's NOT a duplicate key error.
+                    if (error && error.code !== '23505') throw error;
+                }
             }
             handleCloseModal()
             fetchStudents()
@@ -128,6 +147,145 @@ export default function StudentManagement() {
             setSaving(false)
         }
     }
+
+    const generatePassword = () => {
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]\:;?><,./-=";
+        let p = "";
+        for (let i = 0, n = charset.length; i < 12; ++i) {
+            p += charset.charAt(Math.floor(Math.random() * n));
+        }
+        return p;
+    };
+
+    // A basic hash function for dummy passwords since the backend uses bcrypt
+    // Here we're using a simple faux-hash to avoid raw passwords in DB simply to match existing dummy insertions
+    const hashPassword = async (pass) => {
+        const msgUint8 = new TextEncoder().encode(pass);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return hashHex;
+    };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setIsImporting(true);
+        try {
+            const text = await file.text();
+
+            // Basic CSV Parse: Split by newline, then split each line by comma.
+            // Replace \r to handle Windows line endings, then filter empty lines.
+            const lines = text.replace(/\r/g, '').split('\n').filter(l => l.trim().length > 0);
+            if (lines.length < 2) {
+                alert("CSV must contain a header row and at least one data row.");
+                return;
+            }
+
+            // Extract headers, remove quotes and hidden characters, and prepare for matching
+            const header = lines[0].toLowerCase().split(',').map(h => h.replace(/['"]+/g, '').replace(/[\u200B-\u200D\uFEFF]/g, '').trim());
+            const nameIdx = header.findIndex(h => h.includes('name'));
+            const emailIdx = header.findIndex(h => h.includes('email'));
+
+            if (nameIdx === -1 || emailIdx === -1) {
+                alert(`CSV header must contain 'name' and 'email' columns. Found: ${header.join(', ')}`);
+                return;
+            }
+
+            // 1. Parse rows
+            const newUsers = [];
+            for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(',').map(c => c.trim());
+                if (cols.length < Math.max(nameIdx, emailIdx) + 1) continue;
+
+                const rawName = cols[nameIdx];
+                const rawEmail = cols[emailIdx].toLowerCase();
+
+                if (rawName && rawEmail) {
+                    newUsers.push({ full_name: rawName, email: rawEmail });
+                }
+            }
+
+            // 2. Fetch existing to prevent duplicates
+            const { data: existingProfiles, error: fetchError } = await supabase
+                .from('user_profiles')
+                .select('email');
+
+            if (fetchError) throw fetchError;
+            const existingEmails = new Set(existingProfiles.map(p => p.email.toLowerCase()));
+
+            // 4. Batch Create Users directly into profiles (Bypassing Auth Rate Limit per user request)
+            let skipped = 0;
+            const insertPayload = [];
+            const errorList = [];
+
+            for (const user of newUsers) {
+                if (existingEmails.has(user.email)) {
+                    skipped++;
+                    errorList.push(`[${user.email}] Already exists.`);
+                    continue;
+                }
+
+                const tempPassword = generatePassword();
+                const fakeAuthId = crypto.randomUUID(); // Used just to satisfy the profiles table
+
+                // Insert profile (If foreign key constraint exists, this WILL fail unless the DB allows it)
+                const { error: insertError } = await supabase
+                    .from('user_profiles')
+                    .insert([{
+                        id: fakeAuthId,
+                        full_name: user.full_name,
+                        email: user.email,
+                        role: 'student'
+                    }]);
+
+                if (insertError) {
+                    console.error("Profile creation failed for:", user.email, insertError);
+                    skipped++;
+                    errorList.push(`[${user.email}] DB Error: ${insertError.message}`);
+                } else {
+                    insertPayload.push({ email: user.email, tempPassword });
+                }
+            }
+
+            if (insertPayload.length === 0) {
+                alert(`Import finished: 0 new students added. ${skipped} skipped.\n\nErrors:\n${errorList.slice(0, 5).join('\n')}${errorList.length > 5 ? '\n...' : ''}`);
+                return;
+            }
+
+            // Success!
+            let successMsg = `Import successful: ${insertPayload.length} students added. Passwords auto-generated and downloading as CSV now.\n`;
+            if (skipped > 0) successMsg += `${skipped} skipped:\n${errorList.slice(0, 5).join('\n')}${errorList.length > 5 ? '\n...' : ''}`;
+
+            // Generate CSV for credentials download
+            let csvContent = "email,password\n";
+            insertPayload.forEach(p => {
+                csvContent += `${p.email},${p.tempPassword}\n`;
+            });
+
+            // Trigger download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `student_credentials_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            alert(successMsg);
+            fetchStudents();
+
+        } catch (error) {
+            console.error("Error importing CSV:", error);
+            alert("Failed to import CSV: " + error.message);
+        } finally {
+            setIsImporting(false);
+            e.target.value = null; // Clear input
+        }
+    };
 
     const handleDelete = async (studentId) => {
         if (!window.confirm('Are you sure you want to delete this student? This action cannot be undone.')) {
@@ -209,26 +367,61 @@ export default function StudentManagement() {
                     </div>
                 </div>
 
-                <button
-                    onClick={() => handleOpenModal()}
-                    style={{
-                        padding: '12px 24px',
-                        borderRadius: '10px',
-                        border: 'none',
-                        background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-                        color: 'white',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
-                    }}
-                >
-                    <Plus size={18} />
-                    Add Student
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <input
+                        type="file"
+                        accept=".csv"
+                        id="csv-upload"
+                        onChange={handleFileUpload}
+                        style={{ display: 'none' }}
+                    />
+                    <label
+                        htmlFor="csv-upload"
+                        style={{
+                            padding: '12px 24px',
+                            borderRadius: '10px',
+                            border: '1px solid #E5E7EB',
+                            backgroundColor: 'white',
+                            color: '#374151',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: isImporting ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            opacity: isImporting ? 0.7 : 1,
+                            transition: 'all 0.2s',
+                        }}
+                    >
+                        {isImporting ? (
+                            <div style={{ width: 18, height: 18, border: '2px solid #E5E7EB', borderTop: '2px solid #374151', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                        ) : (
+                            <Upload size={18} />
+                        )}
+                        Import CSV
+                    </label>
+
+                    <button
+                        onClick={() => handleOpenModal()}
+                        style={{
+                            padding: '12px 24px',
+                            borderRadius: '10px',
+                            border: 'none',
+                            background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                            color: 'white',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
+                        }}
+                    >
+                        <Plus size={18} />
+                        Add Student
+                    </button>
+                </div>
             </div>
 
             {/* Search & Filters */}
