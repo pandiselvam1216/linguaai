@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Headphones, Play, Pause, Volume2, VolumeX, Check, X, ChevronRight, Award } from 'lucide-react'
+import { Headphones, Play, Pause, Volume2, VolumeX, Check, X, ChevronRight, Award, Clock, RotateCcw, CheckCircle } from 'lucide-react'
 import { getModuleQuestions } from '../../services/questionService'
 import { saveModuleScore } from '../../utils/localScoring'
 
@@ -17,11 +17,18 @@ export default function Listening() {
     const [duration, setDuration] = useState(0)
     const [currentTime, setCurrentTime] = useState(0)
     const [isMuted, setIsMuted] = useState(false)
+    const [completedQuestions, setCompletedQuestions] = useState([]);
+    const [showPopup, setShowPopup] = useState(false);
+
+    // removed local storage syncing
+
     const audioRef = useRef(null)
 
     useEffect(() => {
         fetchQuestions()
     }, [])
+
+    // removed local storage syncing
 
     // Sync mute state with audio element
     useEffect(() => {
@@ -78,6 +85,18 @@ export default function Listening() {
         setProgress(100)
     }
 
+    const handleSelectQuestion = (index) => {
+        if (isPlaying) {
+            audioRef.current?.pause()
+            setIsPlaying(false)
+        }
+        setCurrentIndex(index)
+        setSelectedAnswer(null)
+        setShowResult(false)
+        setProgress(0)
+        setCurrentTime(0)
+    }
+
     const handleSelectAnswer = (value) => {
         if (showResult) return
         setSelectedAnswer(value)
@@ -89,6 +108,11 @@ export default function Listening() {
         const correct = selectedAnswer === currentQuestion.correct_answer
         setIsCorrect(correct)
         setShowResult(true)
+
+        if (correct && !completedQuestions.includes(currentQuestion.id)) {
+            setCompletedQuestions(prev => [...prev, currentQuestion.id])
+        }
+
         setScore(prev => {
             const newScore = {
                 correct: prev.correct + (correct ? 1 : 0),
@@ -105,18 +129,21 @@ export default function Listening() {
         })
     }
 
+    const handleReset = () => {
+        setSelectedAnswer(null)
+        setShowResult(false)
+        setProgress(0)
+        setCurrentTime(0)
+        setIsPlaying(false)
+        if (audioRef.current) {
+            audioRef.current.pause()
+            audioRef.current.currentTime = 0
+        }
+    }
+
     const handleNext = () => {
         if (currentIndex < questions.length - 1) {
-            setCurrentIndex(prev => prev + 1)
-            setSelectedAnswer(null)
-            setShowResult(false)
-            setProgress(0)
-            setCurrentTime(0)
-            setIsPlaying(false)
-            if (audioRef.current) {
-                audioRef.current.pause()
-                audioRef.current.currentTime = 0
-            }
+            handleSelectQuestion(currentIndex + 1)
         }
     }
 
@@ -177,357 +204,510 @@ export default function Listening() {
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
+                gap: '16px',
                 marginBottom: '24px',
-                flexWrap: 'wrap',
-                gap: '12px',
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}>
-                        <Headphones size={24} style={{ color: 'white' }} />
-                    </div>
-                    <div>
-                        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>
-                            Listening Practice
-                        </h1>
-                        <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
-                            Improve your audio comprehension skills
-                        </p>
-                    </div>
-                </div>
-
-                {/* Score */}
                 <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px',
-                    padding: '12px 24px',
-                    backgroundColor: 'white',
-                    borderRadius: '12px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    justifyContent: 'center',
                 }}>
-                    <Award size={24} style={{ color: '#F59E0B' }} />
-                    <div>
-                        <p style={{ fontSize: '20px', fontWeight: '700', color: '#111827', margin: 0 }}>
-                            {score.correct}/{score.total}
-                        </p>
-                        <p style={{ fontSize: '12px', color: '#6B7280', margin: 0 }}>Correct</p>
-                    </div>
+                    <Headphones size={24} style={{ color: 'white' }} />
+                </div>
+                <div>
+                    <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>
+                        Listening Practice
+                    </h1>
+                    <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
+                        Improve your audio comprehension skills
+                    </p>
                 </div>
             </div>
 
-            {/* Progress Bar */}
-            <div style={{
-                backgroundColor: 'white',
-                borderRadius: '12px',
-                padding: '16px 20px',
-                marginBottom: '24px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            }}>
+            <div className="grid-sidebar">
+                {/* Topics Sidebar */}
                 <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: '10px',
-                }}>
-                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
-                        Question {currentIndex + 1} of {questions.length}
-                    </span>
-                    <span style={{ fontSize: '14px', color: '#6B7280' }}>
-                        {Math.round(questionProgress)}%
-                    </span>
-                </div>
-                <div style={{
-                    height: '6px',
-                    backgroundColor: '#E5E7EB',
-                    borderRadius: '3px',
-                    overflow: 'hidden',
-                }}>
-                    <motion.div
-                        animate={{ width: `${questionProgress}%` }}
-                        style={{
-                            height: '100%',
-                            background: 'linear-gradient(90deg, #3B82F6 0%, #60A5FA 100%)',
-                            borderRadius: '3px',
-                        }}
-                    />
-                </div>
-            </div>
-
-            {/* Main Content */}
-            <motion.div
-                key={currentIndex}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{
                     backgroundColor: 'white',
                     borderRadius: '16px',
-                    overflow: 'hidden',
-                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
-                }}
-            >
-                {/* Audio Player */}
-                <div style={{
-                    background: 'linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%)',
-                    padding: '32px',
+                    padding: '20px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    height: 'fit-content',
                 }}>
-                    {/* Hidden real audio element */}
-                    {currentQuestion.audio_data && (
-                        <audio
-                            ref={audioRef}
-                            src={currentQuestion.audio_data}
-                            onTimeUpdate={handleAudioTimeUpdate}
-                            onLoadedMetadata={handleAudioLoaded}
-                            onEnded={handleAudioEnded}
-                            muted={isMuted}
-                        />
-                    )}
-
-                    {/* Track label */}
-                    <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.8)', fontSize: '13px', marginBottom: '16px', margin: '0 0 16px' }}>
-                        {currentQuestion.audio_data ? '🎵 ' + (currentQuestion.title || 'Listening Exercise') : '📝 Read the passage below carefully'}
-                    </p>
-
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '24px',
-                        marginBottom: '24px',
+                    <h3 style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#6B7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        marginBottom: '16px',
                     }}>
-                        <button
-                            onClick={() => setIsMuted(!isMuted)}
-                            disabled={!currentQuestion.audio_data}
-                            style={{
-                                width: '48px',
-                                height: '48px',
-                                borderRadius: '50%',
-                                border: 'none',
-                                backgroundColor: 'rgba(255,255,255,0.2)',
-                                cursor: currentQuestion.audio_data ? 'pointer' : 'default',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'white',
-                                opacity: currentQuestion.audio_data ? 1 : 0.4,
-                            }}
-                        >
-                            {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                        </button>
-
-                        <motion.button
-                            onClick={handlePlayPause}
-                            disabled={!currentQuestion.audio_data}
-                            whileHover={currentQuestion.audio_data ? { scale: 1.05 } : {}}
-                            whileTap={currentQuestion.audio_data ? { scale: 0.95 } : {}}
-                            style={{
-                                width: '72px',
-                                height: '72px',
-                                borderRadius: '50%',
-                                border: 'none',
-                                backgroundColor: 'white',
-                                cursor: currentQuestion.audio_data ? 'pointer' : 'default',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
-                                opacity: currentQuestion.audio_data ? 1 : 0.5,
-                            }}
-                        >
-                            {isPlaying ? (
-                                <Pause size={32} style={{ color: '#1E40AF' }} />
-                            ) : (
-                                <Play size={32} style={{ color: '#1E40AF', marginLeft: '4px' }} />
-                            )}
-                        </motion.button>
-
-                        <div style={{ width: '48px' }} />
-                    </div>
-
-                    {/* Progress Slider */}
-                    <div style={{ marginBottom: '12px' }}>
-                        <div style={{
-                            height: '6px',
-                            backgroundColor: 'rgba(255,255,255,0.3)',
-                            borderRadius: '3px',
-                            overflow: 'hidden',
-                        }}>
-                            <motion.div
-                                animate={{ width: `${progress}%` }}
+                        Exercises
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {questions.map((q, idx) => (
+                            <motion.button
+                                key={q.id}
+                                onClick={() => handleSelectQuestion(idx)}
+                                whileHover={{ x: 4 }}
                                 style={{
-                                    height: '100%',
-                                    backgroundColor: 'white',
-                                    borderRadius: '3px',
+                                    padding: '14px 16px',
+                                    borderRadius: '10px',
+                                    border: 'none',
+                                    backgroundColor: currentIndex === idx ? '#EFF6FF' : 'transparent',
+                                    borderLeft: currentIndex === idx ? '3px solid #3B82F6' : '3px solid transparent',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    position: 'relative',
                                 }}
-                            />
-                        </div>
-                    </div>
-
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        color: 'rgba(255,255,255,0.9)',
-                        fontSize: '13px',
-                    }}>
-                        <span>{formatTime(currentTime)}</span>
-                        <span>{duration > 0 ? formatTime(duration) : '--:--'}</span>
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <p style={{
+                                        fontSize: '14px',
+                                        fontWeight: currentIndex === idx ? '600' : '500',
+                                        color: currentIndex === idx ? '#1E40AF' : '#374151',
+                                        margin: 0,
+                                        flex: 1,
+                                    }}>
+                                        {q.title || `Exercise ${idx + 1}`}
+                                    </p>
+                                    {completedQuestions.includes(q.id) && (
+                                        <CheckCircle size={16} style={{ color: '#22C55E' }} />
+                                    )}
+                                </div>
+                            </motion.button>
+                        ))}
                     </div>
                 </div>
 
-                {/* Question Content */}
-                <div style={{ padding: '32px' }}>
-                    <h3 style={{
-                        fontSize: '18px',
-                        fontWeight: '600',
-                        color: '#111827',
-                        marginBottom: '8px',
-                    }}>
-                        {currentQuestion.title}
-                    </h3>
-                    <p style={{
-                        fontSize: '15px',
-                        color: '#6B7280',
-                        marginBottom: '24px',
-                    }}>
-                        {currentQuestion.content}
-                    </p>
-
-                    {/* Answer Options */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-                        {currentQuestion.options?.map((option, idx) => {
-                            const isSelected = selectedAnswer === option.value
-                            const isCorrectOption = option.value === currentQuestion.correct_answer
-                            const showCorrect = showResult && isCorrectOption
-                            const showWrong = showResult && isSelected && !isCorrectOption
-
-                            return (
-                                <motion.button
-                                    key={idx}
-                                    onClick={() => handleSelectAnswer(option.value)}
-                                    whileHover={!showResult ? { scale: 1.01, x: 4 } : {}}
-                                    style={{
-                                        width: '100%',
-                                        padding: '16px 20px',
-                                        borderRadius: '12px',
-                                        border: '2px solid',
-                                        borderColor: showCorrect ? '#22C55E'
-                                            : showWrong ? '#EF4444'
-                                                : isSelected ? '#3B82F6'
-                                                    : '#E5E7EB',
-                                        backgroundColor: showCorrect ? '#F0FDF4'
-                                            : showWrong ? '#FEF2F2'
-                                                : isSelected ? '#EFF6FF'
-                                                    : 'white',
-                                        cursor: showResult ? 'default' : 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        textAlign: 'left',
-                                        transition: 'all 0.2s',
-                                    }}
-                                >
-                                    <span style={{
-                                        fontSize: '15px',
-                                        fontWeight: isSelected ? '500' : '400',
-                                        color: '#1F2937',
-                                    }}>
-                                        {option.text}
-                                    </span>
-                                    {showResult && (
-                                        <>
-                                            {showCorrect && <Check size={20} style={{ color: '#22C55E' }} />}
-                                            {showWrong && <X size={20} style={{ color: '#EF4444' }} />}
-                                        </>
-                                    )}
-                                </motion.button>
-                            )
-                        })}
-                    </div>
-
-                    {/* Result Feedback */}
-                    <AnimatePresence>
-                        {showResult && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                style={{
-                                    padding: '16px 20px',
-                                    borderRadius: '12px',
-                                    backgroundColor: isCorrect ? '#F0FDF4' : '#FEF2F2',
-                                    borderLeft: `4px solid ${isCorrect ? '#22C55E' : '#EF4444'}`,
-                                    marginBottom: '24px',
-                                }}
-                            >
-                                <p style={{
-                                    fontSize: '15px',
+                {/* Main Content */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    {/* Prompt Card */}
+                    {currentQuestion && (
+                        <motion.div
+                            key={`prompt-${currentQuestion.id}`}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            style={{
+                                backgroundColor: 'white',
+                                borderRadius: '16px',
+                                padding: '24px',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                            }}
+                        >
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                justifyContent: 'space-between',
+                                marginBottom: '16px',
+                            }}>
+                                <h2 style={{
+                                    fontSize: '20px',
                                     fontWeight: '600',
-                                    color: isCorrect ? '#166534' : '#991B1B',
+                                    color: '#111827',
                                     margin: 0,
                                 }}>
-                                    {isCorrect ? '🎉 Correct! Well done!' : '❌ Incorrect. The right answer is highlighted above.'}
-                                </p>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Actions */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                        {!showResult ? (
-                            <button
-                                onClick={handleSubmit}
-                                disabled={!selectedAnswer}
-                                style={{
-                                    padding: '14px 32px',
-                                    borderRadius: '10px',
-                                    border: 'none',
-                                    background: selectedAnswer
-                                        ? 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)'
-                                        : '#E5E7EB',
-                                    color: selectedAnswer ? 'white' : '#9CA3AF',
-                                    fontSize: '15px',
-                                    fontWeight: '600',
-                                    cursor: selectedAnswer ? 'pointer' : 'not-allowed',
+                                    {currentQuestion.title}
+                                </h2>
+                                <div style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '8px',
-                                    boxShadow: selectedAnswer ? '0 4px 14px rgba(59, 130, 246, 0.4)' : 'none',
-                                }}
-                            >
-                                <Check size={18} />
-                                Submit Answer
-                            </button>
-                        ) : currentIndex < questions.length - 1 && (
+                                    gap: '6px',
+                                    padding: '6px 12px',
+                                    backgroundColor: '#EFF6FF',
+                                    borderRadius: '20px',
+                                }}>
+                                    <Headphones size={14} style={{ color: '#3B82F6' }} />
+                                    <span style={{ fontSize: '13px', color: '#1E40AF', fontWeight: '500' }}>
+                                        Listening
+                                    </span>
+                                </div>
+                            </div>
+                            <p style={{
+                                fontSize: '15px',
+                                color: '#4B5563',
+                                lineHeight: '1.6',
+                                margin: 0,
+                            }}>
+                                {currentQuestion.content}
+                            </p>
+                        </motion.div>
+                    )}
+
+                    {/* Playback Area (Matches Speaking Recording Area) */}
+                    <div style={{
+                        backgroundColor: 'white',
+                        borderRadius: '16px',
+                        padding: '40px',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                        textAlign: 'center',
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '32px',
+                            marginBottom: '20px',
+                        }}>
+                            {/* Circular Audio Progress (Matches Speaking Timer) */}
+                            <div style={{ position: 'relative', width: '120px', height: '120px', flexShrink: 0 }}>
+                                <svg width="120" height="120" style={{ transform: 'rotate(-90deg)' }}>
+                                    <circle cx="60" cy="60" r="54" stroke="#E5E7EB" strokeWidth="8" fill="none" />
+                                    <circle
+                                        cx="60" cy="60" r="54"
+                                        stroke="#3B82F6"
+                                        strokeWidth="8" fill="none"
+                                        strokeDasharray={`${2 * Math.PI * 54}`}
+                                        strokeDashoffset={`${2 * Math.PI * 54 * (1 - progress / 100)}`}
+                                        strokeLinecap="round"
+                                        style={{ transition: 'stroke-dashoffset 0.1s linear' }}
+                                    />
+                                </svg>
+                                <div style={{
+                                    position: 'absolute', top: '50%', left: '50%',
+                                    transform: 'translate(-50%, -50%)', textAlign: 'center',
+                                }}>
+                                    <p style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0, fontFamily: 'monospace' }}>
+                                        {formatTime(currentTime)}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Divider */}
+                            <div style={{ width: '1px', height: '80px', backgroundColor: '#E5E7EB' }} />
+
+                            {/* Play Button (Matches Speaking Mic Button) */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                                <motion.button
+                                    onClick={handlePlayPause}
+                                    disabled={!currentQuestion.audio_data}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    animate={isPlaying ? {
+                                        boxShadow: ['0 0 0 0 rgba(59,130,246,0.4)', '0 0 0 20px rgba(59,130,246,0)', '0 0 0 0 rgba(59,130,246,0.4)']
+                                    } : {}}
+                                    transition={isPlaying ? { duration: 1.5, repeat: Infinity } : {}}
+                                    style={{
+                                        width: '80px', height: '80px', borderRadius: '50%', border: 'none',
+                                        background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
+                                        cursor: currentQuestion.audio_data ? 'pointer' : 'default',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+                                        opacity: currentQuestion.audio_data ? 1 : 0.5,
+                                    }}
+                                >
+                                    {isPlaying ? <Pause size={32} style={{ color: 'white' }} /> : <Play size={32} style={{ color: 'white', marginLeft: '4px' }} />}
+                                </motion.button>
+                                <p style={{ fontSize: '13px', color: '#6B7280', margin: 0, fontWeight: '500' }}>
+                                    {isPlaying ? 'Playing...' : 'Tap to play'}
+                                </p>
+                            </div>
+                        </div>
+
+                        {currentQuestion.audio_data && (
+                            <audio
+                                ref={audioRef}
+                                src={currentQuestion.audio_data}
+                                onTimeUpdate={handleAudioTimeUpdate}
+                                onLoadedMetadata={handleAudioLoaded}
+                                onEnded={handleAudioEnded}
+                                muted={isMuted}
+                                style={{ display: 'none' }}
+                            />
+                        )}
+
+                        <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '0' }}>
+                            {currentQuestion.audio_data ? (isPlaying ? 'Listen carefully to the audio' : 'Click play to start the exercise') : 'Read the content above to answer'}
+                        </p>
+                    </div>
+
+                    {/* Answer Options */}
+                    <div style={{
+                        backgroundColor: 'white',
+                        borderRadius: '16px',
+                        padding: '32px',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    }}>
+                        <h3 style={{
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            color: '#111827',
+                            marginBottom: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                        }}>
+                            <CheckCircle size={18} style={{ color: '#3B82F6' }} />
+                            Select the correct answer
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {currentQuestion.options?.map((option, idx) => {
+                                const isSelected = selectedAnswer === option.value
+                                const isCorrectOption = option.value === currentQuestion.correct_answer
+                                const showCorrect = showResult && isCorrectOption
+                                const showWrong = showResult && isSelected && !isCorrectOption
+
+                                return (
+                                    <motion.button
+                                        key={idx}
+                                        onClick={() => handleSelectAnswer(option.value)}
+                                        whileHover={!showResult ? { scale: 1.01, x: 4 } : {}}
+                                        style={{
+                                            width: '100%',
+                                            padding: '16px 20px',
+                                            borderRadius: '12px',
+                                            border: '2px solid',
+                                            borderColor: showCorrect ? '#22C55E'
+                                                : showWrong ? '#EF4444'
+                                                    : isSelected ? '#3B82F6'
+                                                        : '#E5E7EB',
+                                            backgroundColor: showCorrect ? '#F0FDF4'
+                                                : showWrong ? '#FEF2F2'
+                                                    : isSelected ? '#EFF6FF'
+                                                        : 'white',
+                                            cursor: showResult ? 'default' : 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            textAlign: 'left',
+                                            transition: 'all 0.2s',
+                                        }}
+                                    >
+                                        <span style={{
+                                            fontSize: '15px',
+                                            fontWeight: isSelected ? '500' : '400',
+                                            color: '#1F2937',
+                                        }}>
+                                            {option.text}
+                                        </span>
+                                        {showResult && (
+                                            <>
+                                                {showCorrect && <Check size={20} style={{ color: '#22C55E' }} />}
+                                                {showWrong && <X size={20} style={{ color: '#EF4444' }} />}
+                                            </>
+                                        )}
+                                    </motion.button>
+                                )
+                            })}
+                        </div>
+
+                        {/* Result Feedback */}
+                        <AnimatePresence>
+                            {showResult && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    style={{
+                                        padding: '16px 20px',
+                                        borderRadius: '12px',
+                                        backgroundColor: isCorrect ? '#F0FDF4' : '#FEF2F2',
+                                        borderLeft: `4px solid ${isCorrect ? '#22C55E' : '#EF4444'}`,
+                                        marginTop: '24px',
+                                    }}
+                                >
+                                    <p style={{
+                                        fontSize: '15px',
+                                        fontWeight: '600',
+                                        color: isCorrect ? '#166534' : '#991B1B',
+                                        margin: 0,
+                                    }}>
+                                        {isCorrect ? '🎉 Correct! Well done!' : '❌ Incorrect. The right answer is highlighted above.'}
+                                    </p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Actions */}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                             <button
-                                onClick={handleNext}
+                                onClick={handleReset}
                                 style={{
-                                    padding: '14px 32px',
+                                    padding: '12px 20px',
                                     borderRadius: '10px',
-                                    border: 'none',
-                                    background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-                                    color: 'white',
-                                    fontSize: '15px',
-                                    fontWeight: '600',
+                                    border: '1px solid #E5E7EB',
+                                    backgroundColor: 'white',
+                                    color: '#374151',
+                                    fontSize: '14px',
+                                    fontWeight: '500',
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px',
-                                    boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
                                 }}
                             >
-                                Next Question
-                                <ChevronRight size={18} />
+                                <RotateCcw size={16} />
+                                Reset
                             </button>
-                        )}
+                            {!showResult ? (
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={!selectedAnswer}
+                                    style={{
+                                        padding: '14px 32px',
+                                        borderRadius: '10px',
+                                        border: 'none',
+                                        background: selectedAnswer
+                                            ? 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)'
+                                            : '#E5E7EB',
+                                        color: selectedAnswer ? 'white' : '#9CA3AF',
+                                        fontSize: '15px',
+                                        fontWeight: '600',
+                                        cursor: selectedAnswer ? 'pointer' : 'not-allowed',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        boxShadow: selectedAnswer ? '0 4px 14px rgba(59, 130, 246, 0.4)' : 'none',
+                                    }}
+                                >
+                                    <Check size={18} />
+                                    Submit Answer
+                                </button>
+                            ) : currentIndex < questions.length - 1 ? (
+                                <button
+                                    onClick={handleNext}
+                                    style={{
+                                        padding: '14px 32px',
+                                        borderRadius: '10px',
+                                        border: 'none',
+                                        background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                                        color: 'white',
+                                        fontSize: '15px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
+                                    }}
+                                >
+                                    Next Question
+                                    <ChevronRight size={18} />
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => setShowPopup(true)}
+                                    style={{
+                                        padding: '14px 32px',
+                                        borderRadius: '10px',
+                                        border: 'none',
+                                        background: 'linear-gradient(135deg, #111827 0%, #374151 100%)',
+                                        color: 'white',
+                                        fontSize: '15px',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
+                                    }}
+                                >
+                                    <CheckCircle size={18} />
+                                    Final Submit
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </motion.div>
+            </div>
+
+            {/* Completion Popup */}
+            <AnimatePresence>
+                {showPopup && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                    }}>
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            style={{
+                                backgroundColor: 'white',
+                                borderRadius: '24px',
+                                padding: '40px',
+                                width: '90%',
+                                maxWidth: '480px',
+                                textAlign: 'center',
+                                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                            }}
+                        >
+                            <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', marginBottom: '8px' }}>Topic Completed!</h2>
+                            <p style={{ color: '#6B7280', marginBottom: '32px' }}>Here is your overall performance summary.</p>
+
+                            {/* Circular Score */}
+                            <div style={{ position: 'relative', width: '160px', height: '160px', margin: '0 auto 32px auto' }}>
+                                <svg width="160" height="160" style={{ transform: 'rotate(-90deg)' }}>
+                                    <circle cx="80" cy="80" r="72" stroke="#E5E7EB" strokeWidth="12" fill="none" />
+                                    <circle
+                                        cx="80" cy="80" r="72"
+                                        stroke={(score.total > 0 && (score.correct / score.total) >= 0.7) ? "#22C55E" : ((score.total > 0 && (score.correct / score.total) >= 0.4) ? "#EAB308" : "#EF4444")}
+                                        strokeWidth="12" fill="none"
+                                        strokeDasharray={`${2 * Math.PI * 72}`}
+                                        strokeDashoffset={`${2 * Math.PI * 72 * (1 - (score.total > 0 ? (score.correct / score.total) : (isCorrect ? 1 : 0)))}`}
+                                        strokeLinecap="round"
+                                        style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+                                    />
+                                </svg>
+                                <div style={{
+                                    position: 'absolute', top: '50%', left: '50%',
+                                    transform: 'translate(-50%, -50%)', textAlign: 'center',
+                                }}>
+                                    <p style={{ fontSize: '36px', fontWeight: '800', color: '#111827', margin: 0 }}>
+                                        {score.total > 0 ? Math.round((score.correct / score.total) * 100) : (isCorrect ? 100 : 0)}%
+                                    </p>
+                                    <p style={{ fontSize: '14px', color: '#6B7280', margin: 0, fontWeight: '500' }}>Score</p>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {currentIndex < questions.length - 1 && (
+                                    <button
+                                        onClick={() => { setShowPopup(false); handleNext(); }}
+                                        style={{
+                                            padding: '14px 24px', borderRadius: '12px', border: 'none',
+                                            background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                                            color: 'white', fontSize: '16px', fontWeight: '600', cursor: 'pointer',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                        }}
+                                    >
+                                        Next Topic <ChevronRight size={18} />
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => window.location.href = '/dashboard'}
+                                    style={{
+                                        padding: '14px 24px', borderRadius: '12px', border: 'none',
+                                        background: (currentIndex < questions.length - 1) ? '#F3F4F6' : 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                                        color: (currentIndex < questions.length - 1) ? '#374151' : 'white', fontSize: '16px', fontWeight: '600', cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                    }}
+                                >
+                                    Next Module <ChevronRight size={18} />
+                                </button>
+                                <button
+                                    onClick={() => { setShowPopup(false); handleReset(); }}
+                                    style={{
+                                        padding: '14px 24px', borderRadius: '12px', border: '2px solid #E5E7EB',
+                                        backgroundColor: 'white',
+                                        color: '#4B5563', fontSize: '16px', fontWeight: '600', cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                    }}
+                                >
+                                    <RotateCcw size={18} /> Retest
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
