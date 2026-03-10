@@ -108,8 +108,11 @@ export default function Landing() {
             {/* Hero Section */}
             <section style={{
                 paddingTop: '140px',
-                paddingBottom: '80px',
+                paddingBottom: '60px',
                 backgroundColor: '#FFFFFF',
+                minHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
             }}>
                 <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
                     <motion.div
@@ -181,55 +184,151 @@ export default function Landing() {
                 </div>
             </section>
 
-            {/* Features Section */}
-            <section id="features" style={{ padding: '80px 0', backgroundColor: '#F9FAFB' }}>
-                <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-                        <h2 style={{ fontSize: '40px', fontWeight: '700', color: '#111827', marginBottom: '16px' }}>
-                            Why Choose NeuraLingua?
-                        </h2>
-                        <p style={{ fontSize: '18px', color: '#6B7280', maxWidth: '500px', margin: '0 auto' }}>
-                            Our platform combines AI technology with proven learning methods
-                        </p>
-                    </div>
+            {/* AI Journey Section */}
+            <section id="features" style={{ padding: '96px 0', background: 'linear-gradient(180deg, #F9FAFB 0%, #FFFFFF 100%)' }}>
+                <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
 
-                    <div className="landing-features-grid">
-                        {features.map((feature, i) => (
+                    {/* Heading */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 24 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                        style={{ textAlign: 'center', marginBottom: '80px' }}
+                    >
+                        <div style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '8px',
+                            backgroundColor: '#EFF6FF', borderRadius: '100px',
+                            padding: '8px 18px', marginBottom: '20px',
+                        }}>
+                            <Sparkles size={15} style={{ color: '#1A73E8' }} />
+                            <span style={{ fontSize: '13px', fontWeight: '600', color: '#1A73E8' }}>AI-Powered Communication Training</span>
+                        </div>
+                        <h2 style={{ fontSize: '40px', fontWeight: '700', color: '#111827', marginBottom: '16px', lineHeight: 1.2 }}>
+                            How Our AI Helps Students<br />
+                            <span style={{ color: '#1A73E8' }}>Master Communication</span>
+                        </h2>
+                        <p style={{ fontSize: '18px', color: '#6B7280', maxWidth: '520px', margin: '0 auto', lineHeight: 1.6 }}>
+                            A smart, personalized journey from practice to confident communication — powered by real-time AI feedback.
+                        </p>
+                    </motion.div>
+
+                    {/* Steps */}
+                    {[
+                        {
+                            step: '01',
+                            icon: Mic,
+                            color: '#3B82F6',
+                            bg: '#EFF6FF',
+                            title: 'Speak & Express',
+                            desc: 'Students practice speaking through structured exercises — from daily conversations to presentations. The AI listens and records every attempt.',
+                            tag: 'Real-time Speech Capture',
+                        },
+                        {
+                            step: '02',
+                            icon: Zap,
+                            color: '#10B981',
+                            bg: '#ECFDF5',
+                            title: 'Instant AI Analysis',
+                            desc: 'Our AI engine analyses pronunciation, fluency, grammar, vocabulary, and confidence level within seconds — giving precise, actionable insights.',
+                            tag: 'AI Grammar & Fluency Engine',
+                        },
+                        {
+                            step: '03',
+                            icon: CheckCircle,
+                            color: '#8B5CF6',
+                            bg: '#F5F3FF',
+                            title: 'Personalised Feedback',
+                            desc: 'Each student receives tailored feedback with examples, corrections, and improvement tips — not generic advice, but specific to their own speech.',
+                            tag: 'Adaptive Feedback Loop',
+                        },
+                        {
+                            step: '04',
+                            icon: Globe,
+                            color: '#F59E0B',
+                            bg: '#FFFBEB',
+                            title: 'Track & Grow',
+                            desc: 'Progress dashboards show improvement over time. Students and teachers can see skill growth across speaking, writing, listening, and grammar.',
+                            tag: 'Progress Analytics',
+                        },
+                    ].map((item, i) => {
+                        const Icon = item.icon
+                        const isRight = i % 2 === 1
+                        return (
                             <motion.div
                                 key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
+                                initial={{ opacity: 0, x: isRight ? 50 : -50 }}
+                                whileInView={{ opacity: 1, x: 0 }}
                                 viewport={{ once: true }}
-                                transition={{ delay: i * 0.1 }}
+                                transition={{ duration: 0.6, delay: 0.1 }}
                                 style={{
-                                    backgroundColor: 'white',
-                                    borderRadius: '16px',
-                                    padding: '32px',
-                                    border: '1px solid #E5E7EB',
-                                    transition: 'all 0.2s ease',
-                                }}
-                            >
-                                <div style={{
-                                    width: '48px',
-                                    height: '48px',
-                                    borderRadius: '12px',
-                                    backgroundColor: `${feature.color}15`,
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
-                                    marginBottom: '20px',
-                                }}>
-                                    <feature.icon size={24} style={{ color: feature.color }} />
+                                    gap: '56px',
+                                    flexDirection: isRight ? 'row-reverse' : 'row',
+                                    marginBottom: i < 3 ? '72px' : '0',
+                                }}
+                                className="ai-journey-step"
+                            >
+                                {/* Visual Side */}
+                                <div style={{ flex: '0 0 auto', position: 'relative' }}>
+                                    <motion.div
+                                        animate={{ y: [0, -8, 0] }}
+                                        transition={{ repeat: Infinity, duration: 3 + i * 0.5, ease: 'easeInOut' }}
+                                        style={{
+                                            width: '200px',
+                                            height: '200px',
+                                            borderRadius: '28px',
+                                            backgroundColor: item.bg,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            boxShadow: `0 20px 60px ${item.color}25`,
+                                            border: `1px solid ${item.color}20`,
+                                        }}
+                                    >
+                                        <Icon size={80} style={{ color: item.color, opacity: 0.85 }} />
+                                    </motion.div>
+                                    {/* Step Badge */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '-14px',
+                                        right: isRight ? 'auto' : '-14px',
+                                        left: isRight ? '-14px' : 'auto',
+                                        width: '48px', height: '48px',
+                                        borderRadius: '50%',
+                                        backgroundColor: item.color,
+                                        color: 'white',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontWeight: '700',
+                                        fontSize: '16px',
+                                        boxShadow: `0 4px 14px ${item.color}50`,
+                                    }}>
+                                        {item.step}
+                                    </div>
                                 </div>
-                                <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
-                                    {feature.title}
-                                </h3>
-                                <p style={{ fontSize: '14px', color: '#6B7280', lineHeight: '1.6' }}>
-                                    {feature.desc}
-                                </p>
+
+                                {/* Text Side */}
+                                <div style={{ flex: 1 }}>
+                                    <div style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                        backgroundColor: item.bg, borderRadius: '100px',
+                                        padding: '5px 14px', marginBottom: '16px',
+                                    }}>
+                                        <span style={{ fontSize: '12px', fontWeight: '600', color: item.color }}>{item.tag}</span>
+                                    </div>
+                                    <h3 style={{ fontSize: '28px', fontWeight: '700', color: '#111827', marginBottom: '12px', lineHeight: 1.2 }}>
+                                        {item.title}
+                                    </h3>
+                                    <p style={{ fontSize: '16px', color: '#6B7280', lineHeight: 1.7, maxWidth: '480px' }}>
+                                        {item.desc}
+                                    </p>
+                                </div>
                             </motion.div>
-                        ))}
-                    </div>
+                        )
+                    })}
                 </div>
             </section>
 
@@ -432,9 +531,9 @@ export default function Landing() {
                     </div>
 
                     <div className="landing-footer-links">
-                        <a href="#" style={{ color: '#6B7280', textDecoration: 'none', fontSize: '14px' }}>Privacy</a>
-                        <a href="#" style={{ color: '#6B7280', textDecoration: 'none', fontSize: '14px' }}>Terms</a>
-                        <a href="#" style={{ color: '#6B7280', textDecoration: 'none', fontSize: '14px' }}>Contact</a>
+                        <Link to="/privacy" style={{ color: '#6B7280', textDecoration: 'none', fontSize: '14px' }}>Privacy</Link>
+                        <Link to="/terms" style={{ color: '#6B7280', textDecoration: 'none', fontSize: '14px' }}>Terms</Link>
+                        <Link to="/contact" style={{ color: '#6B7280', textDecoration: 'none', fontSize: '14px' }}>Contact</Link>
                     </div>
 
                     {/* NeuraGlobal Branding */}
