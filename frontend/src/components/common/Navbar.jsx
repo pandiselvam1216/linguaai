@@ -192,20 +192,42 @@ export default function Navbar({ onMenuClick }) {
                             {user?.role?.name || 'Student'}
                         </p>
                     </div>
+                    {/* Animated Premium Avatar container container */}
                     <div style={{
-                        width: '40px',
-                        height: '40px',
-                        flexShrink: 0,
-                        borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #1A73E8 0%, #4285F4 100%)',
+                        position: 'relative',
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '12px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: 'white',
+                        background: 'linear-gradient(135deg, #4285F4, #9b72cb, #d96570, #f8b83e)',
+                        backgroundSize: '300% 300%',
+                        animation: 'ai-gradient-shift 8s ease infinite',
+                        padding: '2px', // Border thickness
+                        flexShrink: 0,
                     }}>
-                        {user?.full_name?.charAt(0) || 'U'}
+                        {/* Inner element (white background to hide middle of gradient) */}
+                        <div style={{
+                            width: '100%',
+                            height: '100%',
+                            borderRadius: '10px',
+                            backgroundColor: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}>
+                            {/* Actual Initial Text */}
+                            <span style={{
+                                fontSize: '18px',
+                                fontWeight: '700',
+                                background: 'linear-gradient(135deg, #4285f4 0%, #1a73e8 100%)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                            }}>
+                                {user?.full_name?.charAt(0) || 'U'}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
