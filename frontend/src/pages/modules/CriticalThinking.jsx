@@ -16,6 +16,15 @@ export default function CriticalThinking() {
     const [isTimerActive, setIsTimerActive] = useState(false)
     const [result, setResult] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [completedTopics, setCompletedTopics] = useState(() => {
+        const saved = localStorage.getItem('neuraLingua_completed_critical_thinking');
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('neuraLingua_completed_critical_thinking', JSON.stringify(completedTopics));
+    }, [completedTopics]);
+
     const recognitionRef = useRef(null)
 
     useEffect(() => {
@@ -147,6 +156,9 @@ export default function CriticalThinking() {
             })
             setResult(res.data)
             saveModuleScore('critical_thinking', res.data.score?.total_score || 0, timeTaken)
+            if (!completedTopics.includes(currentPrompt?.id)) {
+                setCompletedTopics(prev => [...prev, currentPrompt.id])
+            }
         } catch (error) {
             console.error('Failed to submit:', error)
             const timeTaken = (currentPrompt?.time_limit || 120) - timeLeft
@@ -159,6 +171,9 @@ export default function CriticalThinking() {
             }
             setResult(fallbackResult)
             saveModuleScore('critical_thinking', fallbackResult.score.total_score, timeTaken)
+            if (!completedTopics.includes(currentPrompt?.id)) {
+                setCompletedTopics(prev => [...prev, currentPrompt.id])
+            }
         }
     }
 
@@ -258,7 +273,10 @@ export default function CriticalThinking() {
                                         }
                                     }}
                                 >
-                                    {prompt.title}
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                        <span>{prompt.title}</span>
+                                        {completedTopics.includes(prompt.id) && <CheckCircle size={14} style={{ color: '#22C55E' }} />}
+                                    </div>
                                 </button>
                             ))}
                         </div>

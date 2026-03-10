@@ -13,6 +13,14 @@ export default function Grammar() {
     const [score, setScore] = useState({ correct: 0, total: 0 })
     const [loading, setLoading] = useState(true)
     const [showExplanation, setShowExplanation] = useState(false)
+    const [completedQuestions, setCompletedQuestions] = useState(() => {
+        const saved = localStorage.getItem('neuraLingua_completed_grammar');
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('neuraLingua_completed_grammar', JSON.stringify(completedQuestions));
+    }, [completedQuestions]);
 
     useEffect(() => {
         fetchQuestions()
@@ -57,6 +65,9 @@ export default function Grammar() {
 
             return newScore;
         })
+        if (!completedQuestions.includes(currentIndex)) {
+            setCompletedQuestions(prev => [...prev, currentIndex])
+        }
     }
 
     const handleNext = () => {
@@ -217,6 +228,7 @@ export default function Grammar() {
                 }}>
                     <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
                         Question {currentIndex + 1} of {questions.length}
+                        {completedQuestions.includes(currentIndex) && <CheckCircle size={16} style={{ color: '#22C55E', marginLeft: '8px' }} />}
                     </span>
                     <span style={{ fontSize: '14px', color: '#6B7280' }}>
                         {Math.round(progress)}% Complete

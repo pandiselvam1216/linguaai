@@ -13,6 +13,14 @@ export default function Writing() {
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
     const [timeElapsed, setTimeElapsed] = useState(0)
+    const [completedTopics, setCompletedTopics] = useState(() => {
+        const saved = localStorage.getItem('neuraLingua_completed_writing');
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('neuraLingua_completed_writing', JSON.stringify(completedTopics));
+    }, [completedTopics]);
 
     useEffect(() => {
         fetchPrompts()
@@ -69,6 +77,9 @@ export default function Writing() {
                 result.aiFeedback = aiFeedback
             }
             setFeedback(result)
+            if (!completedTopics.includes(selectedPrompt?.id)) {
+                setCompletedTopics(prev => [...prev, selectedPrompt.id])
+            }
         } catch (error) {
             console.error('Failed to submit:', error)
         } finally {
@@ -223,6 +234,9 @@ export default function Writing() {
                                 }}>
                                     {prompt.word_limit || minWords}+ words
                                 </p>
+                                {completedTopics.includes(prompt.id) && (
+                                    <CheckCircle size={16} style={{ color: '#22C55E', position: 'absolute', right: '12px', top: '12px' }} />
+                                )}
                             </motion.button>
                         ))}
                     </div>

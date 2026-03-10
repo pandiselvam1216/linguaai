@@ -13,6 +13,14 @@ export default function Reading() {
     const [results, setResults] = useState(null)
     const [loading, setLoading] = useState(true)
     const [timeLeft, setTimeLeft] = useState(600)
+    const [completedPassages, setCompletedPassages] = useState(() => {
+        const saved = localStorage.getItem('neuraLingua_completed_reading');
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('neuraLingua_completed_reading', JSON.stringify(completedPassages));
+    }, [completedPassages]);
 
     // PDF viewer state
     const [pdfUrl, setPdfUrl] = useState(null)      // blob URL of loaded PDF
@@ -79,6 +87,7 @@ export default function Reading() {
             })
             setResults(response.data)
             saveModuleScore('reading', response.data.score, 600 - timeLeft)
+            markAsCompleted()
         } catch (error) {
             console.error('Failed to submit:', error)
             const fallbackResult = {
@@ -89,6 +98,7 @@ export default function Reading() {
             }
             setResults(fallbackResult)
             saveModuleScore('reading', fallbackResult.score, 600 - timeLeft)
+            markAsCompleted()
         }
     }
 
@@ -99,6 +109,12 @@ export default function Reading() {
             setSubmitted(false)
             setResults(null)
             setTimeLeft(600)
+        }
+    }
+
+    const markAsCompleted = () => {
+        if (!completedPassages.includes(currentIndex)) {
+            setCompletedPassages(prev => [...prev, currentIndex])
         }
     }
 
@@ -251,6 +267,7 @@ export default function Reading() {
                                 <BookOpen size={18} style={{ color: '#8B5CF6' }} />
                                 <h2 style={{ fontSize: '15px', fontWeight: '600', color: '#111827', margin: 0 }}>
                                     {currentPassage.title}
+                                    {completedPassages.includes(currentIndex) && <CheckCircle size={16} style={{ color: '#22C55E' }} />}
                                 </h2>
                             </div>
                             <span style={{ fontSize: '12px', color: '#6B7280', padding: '4px 10px', backgroundColor: '#F3F4F6', borderRadius: '6px' }}>
