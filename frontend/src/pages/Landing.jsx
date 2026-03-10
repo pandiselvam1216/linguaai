@@ -180,7 +180,6 @@ export default function Landing() {
                             </button>
                         </div>
                     </motion.div>
-
                 </div>
             </section>
 
