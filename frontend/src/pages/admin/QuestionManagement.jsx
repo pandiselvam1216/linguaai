@@ -372,11 +372,7 @@ export default function QuestionManagement() {
                 justifyContent: 'space-between',
                 marginBottom: '24px',
                 flexWrap: 'wrap',
-<<<<<<< HEAD
-                gap: '20px'
-=======
                 gap: '16px',
->>>>>>> 6342037c4ef8c521c1ccee76e53787385882cb93
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{
