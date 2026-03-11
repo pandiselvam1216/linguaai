@@ -146,6 +146,13 @@ export default function Speaking() {
         }
     }
 
+    const handleNextTopic = () => {
+        const currentIndex = prompts.findIndex(p => p.id === selectedPrompt?.id)
+        if (currentIndex !== -1 && currentIndex < prompts.length - 1) {
+            handleSelectPrompt(prompts[currentIndex + 1])
+        }
+    }
+
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60)
         const secs = seconds % 60
@@ -464,8 +471,6 @@ export default function Speaking() {
                                 <Send size={16} />
                                 {submitting ? 'Analyzing...' : 'Get Feedback'}
                             </button>
-<<<<<<< HEAD
- 
                             {/* Added Next Topic button */}
                             {feedback && prompts.findIndex(p => p.id === selectedPrompt.id) < prompts.length - 1 && (
                                 <button
@@ -489,8 +494,6 @@ export default function Speaking() {
                                     <ChevronRight size={16} />
                                 </button>
                             )}
-=======
->>>>>>> 6342037c4ef8c521c1ccee76e53787385882cb93
                         </div>
 
                     </div>

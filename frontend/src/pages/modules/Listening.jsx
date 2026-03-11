@@ -195,10 +195,7 @@ export default function Listening() {
                 justifyContent: 'space-between',
                 marginBottom: '24px',
                 flexWrap: 'wrap',
-<<<<<<< HEAD
-=======
                 gap: '12px',
->>>>>>> 6342037c4ef8c521c1ccee76e53787385882cb93
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{
@@ -226,20 +223,6 @@ export default function Listening() {
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
-<<<<<<< HEAD
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                }}>
-                    <Headphones size={24} style={{ color: 'white' }} />
-                </div>
-                <div>
-                    <h1 style={{ fontWeight: '700', color: '#111827', margin: 0 }}>
-                        Listening Practice
-                    </h1>
-                    <p style={{ color: '#6B7280', margin: 0 }}>
-                        Improve your audio comprehension skills
-                    </p>
-=======
                     gap: '12px',
                     padding: '12px 24px',
                     backgroundColor: 'white',
@@ -253,7 +236,6 @@ export default function Listening() {
                         </p>
                         <p style={{ fontSize: '12px', color: '#6B7280', margin: 0 }}>Correct</p>
                     </div>
->>>>>>> 6342037c4ef8c521c1ccee76e53787385882cb93
                 </div>
             </div>
 
@@ -465,93 +447,7 @@ export default function Listening() {
                         </motion.div>
                     )}
 
-<<<<<<< HEAD
-                    {/* Playback Area (Matches Speaking Recording Area) */}
-                    <div className="card" style={{
-                        padding: 'min(40px, 6vw)',
-                        textAlign: 'center',
-                    }}>
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 'min(32px, 5vw)',
-                            marginBottom: '20px',
-                            flexWrap: 'wrap',
-                        }}>
-                            {/* Circular Audio Progress (Matches Speaking Timer) */}
-                            <div style={{ position: 'relative', width: '120px', height: '120px', flexShrink: 0 }}>
-                                <svg width="120" height="120" style={{ transform: 'rotate(-90deg)' }}>
-                                    <circle cx="60" cy="60" r="54" stroke="#E5E7EB" strokeWidth="8" fill="none" />
-                                    <circle
-                                        cx="60" cy="60" r="54"
-                                        stroke="#3B82F6"
-                                        strokeWidth="8" fill="none"
-                                        strokeDasharray={`${2 * Math.PI * 54}`}
-                                        strokeDashoffset={`${2 * Math.PI * 54 * (1 - progress / 100)}`}
-                                        strokeLinecap="round"
-                                        style={{ transition: 'stroke-dashoffset 0.1s linear' }}
-                                    />
-                                </svg>
-                                <div style={{
-                                    position: 'absolute', top: '50%', left: '50%',
-                                    transform: 'translate(-50%, -50%)', textAlign: 'center',
-                                }}>
-                                    <p style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0, fontFamily: 'monospace' }}>
-                                        {formatTime(currentTime)}
-                                    </p>
-                                </div>
-                            </div>
- 
-                            {/* Divider - hide on small screens when wrapping */}
-                            <div style={{ width: '1px', height: '80px', backgroundColor: '#E5E7EB', display: window.innerWidth < 480 ? 'none' : 'block' }} />
- 
-                            {/* Play Button (Matches Speaking Mic Button) */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                                <motion.button
-                                    onClick={handlePlayPause}
-                                    disabled={!currentQuestion.audio_data}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    animate={isPlaying ? {
-                                        boxShadow: ['0 0 0 0 rgba(59,130,246,0.4)', '0 0 0 20px rgba(59,130,246,0)', '0 0 0 0 rgba(59,130,246,0.4)']
-                                    } : {}}
-                                    transition={isPlaying ? { duration: 1.5, repeat: Infinity } : {}}
-                                    style={{
-                                        width: '80px', height: '80px', borderRadius: '50%', border: 'none',
-                                        background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
-                                        cursor: currentQuestion.audio_data ? 'pointer' : 'default',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
-                                        opacity: currentQuestion.audio_data ? 1 : 0.5,
-                                    }}
-                                >
-                                    {isPlaying ? <Pause size={32} style={{ color: 'white' }} /> : <Play size={32} style={{ color: 'white', marginLeft: '4px' }} />}
-                                </motion.button>
-                                <p style={{ fontSize: '13px', color: '#6B7280', margin: 0, fontWeight: '500' }}>
-                                    {isPlaying ? 'Playing...' : 'Tap to play'}
-                                </p>
-                            </div>
-                        </div>
- 
-                        {currentQuestion.audio_data && (
-                            <audio
-                                ref={audioRef}
-                                src={currentQuestion.audio_data}
-                                onTimeUpdate={handleAudioTimeUpdate}
-                                onLoadedMetadata={handleAudioLoaded}
-                                onEnded={handleAudioEnded}
-                                muted={isMuted}
-                                style={{ display: 'none' }}
-                            />
-                        )}
- 
-                        <p style={{ color: '#6B7280', marginBottom: '0' }}>
-                            {currentQuestion.audio_data ? (isPlaying ? 'Listen carefully to the audio' : 'Click play to start the exercise') : 'Read the content above to answer'}
-                        </p>
-                    </div>
-=======
->>>>>>> 6342037c4ef8c521c1ccee76e53787385882cb93
+
 
                     {/* Answer Options */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
@@ -605,19 +501,12 @@ export default function Listening() {
                         })}
                     </div>
 
-<<<<<<< HEAD
-                        {/* Actions */}
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px', flexWrap: 'wrap' }}>
-                            <button
-                                onClick={handleReset}
-=======
                     {/* Result Feedback */}
                     <AnimatePresence>
                         {showResult && (
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
->>>>>>> 6342037c4ef8c521c1ccee76e53787385882cb93
                                 style={{
                                     padding: '16px 20px',
                                     borderRadius: '12px',
