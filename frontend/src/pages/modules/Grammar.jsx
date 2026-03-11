@@ -155,29 +155,56 @@ export default function Grammar() {
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '16px',
+                justifyContent: 'space-between',
                 marginBottom: '24px',
                 flexWrap: 'wrap',
+                gap: '12px',
             }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #EF4444 0%, #F87171 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                    }}>
+                        <CheckSquare size={24} style={{ color: 'white' }} />
+                    </div>
+                    <div>
+                        <h1 style={{ fontWeight: '700', color: '#111827', margin: 0 }}>
+                            Grammar Practice
+                        </h1>
+                        <p style={{ color: '#6B7280', margin: 0 }}>
+                            Master English grammar rules with interactive exercises
+                        </p>
+                    </div>
+                </div>
+
+                {/* Score Badge */}
                 <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #EF4444 0%, #F87171 100%)',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
+                    gap: '8px',
+                    padding: '10px 16px',
+                    backgroundColor: 'white',
+                    borderRadius: '10px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 }}>
-                    <CheckSquare size={24} style={{ color: 'white' }} />
-                </div>
-                <div>
-                    <h1 style={{ fontWeight: '700', color: '#111827', margin: 0 }}>
-                        Grammar Practice
-                    </h1>
-                    <p style={{ color: '#6B7280', margin: 0 }}>
-                        Master English grammar rules with interactive exercises
-                    </p>
+                    <Star size={16} style={{ color: '#F59E0B', fill: '#F59E0B' }} />
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#111827' }}>
+                        {score.correct}/{score.total}
+                    </span>
+                    <span style={{ fontSize: '13px', color: '#9CA3AF' }}>•</span>
+                    <span style={{
+                        fontSize: '14px',
+                        fontWeight: '700',
+                        color: scorePercent >= 70 ? '#16A34A' : '#EF4444',
+                    }}>
+                        {scorePercent}%
+                    </span>
                 </div>
             </div>
 
@@ -246,39 +273,6 @@ export default function Grammar() {
 
                 {/* Main Content */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    {/* Progress Card */}
-                    <div className="card" style={{
-                        padding: '16px 24px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: '20px'
-                    }}>
-                        <div style={{ flex: 1, minWidth: '200px' }}>
-                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: '600', color: '#374151' }}>Progress</span>
-                                <span style={{ fontSize: '13px', color: '#6B7280' }}>{Math.round(progress)}%</span>
-                             </div>
-                             <div style={{ height: '6px', backgroundColor: '#F3F4F6', borderRadius: '3px', overflow: 'hidden' }}>
-                                <motion.div 
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${progress}%` }}
-                                    style={{ height: '100%', background: '#EF4444' }} 
-                                />
-                             </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '16px' }}>
-                             <div style={{ textAlign: 'center' }}>
-                                <p style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: 0 }}>{score.correct}/{score.total}</p>
-                                <p style={{ fontSize: '11px', color: '#6B7280', margin: 0, textTransform: 'uppercase' }}>Score</p>
-                             </div>
-                             <div style={{ textAlign: 'center' }}>
-                                <p style={{ fontSize: '18px', fontWeight: '700', color: scorePercent >= 70 ? '#16A34A' : '#EF4444', margin: 0 }}>{scorePercent}%</p>
-                                <p style={{ fontSize: '11px', color: '#6B7280', margin: 0, textTransform: 'uppercase' }}>Accuracy</p>
-                             </div>
-                        </div>
-                    </div>
 
                     {/* Question Card */}
                     <motion.div

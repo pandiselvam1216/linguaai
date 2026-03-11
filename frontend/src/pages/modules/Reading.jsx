@@ -205,27 +205,47 @@ export default function Reading() {
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '16px',
+                justifyContent: 'space-between',
                 marginBottom: '24px',
+                flexWrap: 'wrap',
+                gap: '12px',
             }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}>
+                        <BookOpen size={24} style={{ color: 'white' }} />
+                    </div>
+                    <div>
+                        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>
+                            Reading Comprehension
+                        </h1>
+                        <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
+                            Read passages and answer questions to improve comprehension
+                        </p>
+                    </div>
+                </div>
+
+                {/* Timer Badge */}
                 <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '10px 16px',
+                    backgroundColor: 'white',
+                    borderRadius: '10px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 }}>
-                    <BookOpen size={24} style={{ color: 'white' }} />
-                </div>
-                <div>
-                    <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>
-                        Reading Comprehension
-                    </h1>
-                    <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
-                        Read passages and answer questions to improve comprehension
-                    </p>
+                    <Clock size={16} style={{ color: '#8B5CF6' }} />
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#111827', fontVariantNumeric: 'tabular-nums' }}>
+                        {formatTime(timeLeft)}
+                    </span>
                 </div>
             </div>
 
