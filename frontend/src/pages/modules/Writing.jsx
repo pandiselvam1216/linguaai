@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { PenTool, Send, Clock, CheckCircle, ChevronRight, XCircle, Award, RotateCcw, AlertCircle, Info } from 'lucide-react'
 import api from '../../services/api'
 import { getModuleQuestions } from '../../services/questionService'
-import { saveModuleScore } from '../../utils/localScoring'
+import { evaluateWriting, saveModuleScore } from '../../utils/localScoring'
+import { getAIWritingFeedback } from '../../services/aiService'
 import ModuleRulesModal from '../../components/common/ModuleRulesModal'
 
 const writingRules = [
@@ -723,7 +724,7 @@ export default function Writing() {
                                 <button
                                     onClick={() => {
                                         setShowPopup(false);
-                                        setText('');
+                                        setEssay('');
                                         setFeedback(null);
                                     }}
                                     style={{
@@ -742,7 +743,7 @@ export default function Writing() {
                                     onClick={() => {
                                         setShowPopup(false);
                                         setSelectedPrompt(null);
-                                        setText('');
+                                        setEssay('');
                                         setFeedback(null);
                                     }}
                                     style={{

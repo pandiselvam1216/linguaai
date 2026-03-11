@@ -6,6 +6,7 @@ import { evaluateSpeaking } from '../../utils/localScoring'
 import { getModuleQuestions } from '../../services/questionService'
 import { saveModuleScore } from '../../utils/localScoring'
 import ModuleRulesModal from '../../components/common/ModuleRulesModal'
+import Modal from '../../components/common/Modal'
 
 export default function Speaking() {
     const [prompts, setPrompts] = useState([])
