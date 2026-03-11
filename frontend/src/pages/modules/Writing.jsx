@@ -149,7 +149,7 @@ export default function Writing() {
                 flexWrap: 'wrap',
                 gap: '12px',
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
                     <div style={{
                         width: '48px',
                         height: '48px',
@@ -158,14 +158,15 @@ export default function Writing() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        flexShrink: 0,
                     }}>
                         <PenTool size={24} style={{ color: 'white' }} />
                     </div>
                     <div>
-                        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>
+                        <h1 style={{ fontWeight: '700', color: '#111827', margin: 0 }}>
                             Writing Practice
                         </h1>
-                        <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
+                        <p style={{ color: '#6B7280', margin: 0 }}>
                             Develop your essay writing skills with AI feedback
                         </p>
                     </div>
@@ -305,6 +306,8 @@ export default function Writing() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: '16px'
                         }}>
                             <div style={{ flex: 1, marginRight: '20px' }}>
                                 <div style={{
@@ -400,6 +403,7 @@ export default function Writing() {
                             display: 'flex',
                             justifyContent: 'flex-end',
                             gap: '12px',
+                            flexWrap: 'wrap'
                         }}>
                             <button
                                 onClick={handleReset}

@@ -209,6 +209,7 @@ export default function Listening() {
                 alignItems: 'center',
                 gap: '16px',
                 marginBottom: '24px',
+                flexWrap: 'wrap',
             }}>
                 <div style={{
                     width: '48px',
@@ -218,14 +219,15 @@ export default function Listening() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    flexShrink: 0,
                 }}>
                     <Headphones size={24} style={{ color: 'white' }} />
                 </div>
                 <div>
-                    <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>
+                    <h1 style={{ fontWeight: '700', color: '#111827', margin: 0 }}>
                         Listening Practice
                     </h1>
-                    <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
+                    <p style={{ color: '#6B7280', margin: 0 }}>
                         Improve your audio comprehension skills
                     </p>
                 </div>
@@ -343,19 +345,17 @@ export default function Listening() {
                     )}
 
                     {/* Playback Area (Matches Speaking Recording Area) */}
-                    <div style={{
-                        backgroundColor: 'white',
-                        borderRadius: '16px',
-                        padding: '40px',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    <div className="card" style={{
+                        padding: 'min(40px, 6vw)',
                         textAlign: 'center',
                     }}>
                         <div style={{
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '32px',
+                            gap: 'min(32px, 5vw)',
                             marginBottom: '20px',
+                            flexWrap: 'wrap',
                         }}>
                             {/* Circular Audio Progress (Matches Speaking Timer) */}
                             <div style={{ position: 'relative', width: '120px', height: '120px', flexShrink: 0 }}>
@@ -380,10 +380,10 @@ export default function Listening() {
                                     </p>
                                 </div>
                             </div>
-
-                            {/* Divider */}
-                            <div style={{ width: '1px', height: '80px', backgroundColor: '#E5E7EB' }} />
-
+ 
+                            {/* Divider - hide on small screens when wrapping */}
+                            <div style={{ width: '1px', height: '80px', backgroundColor: '#E5E7EB', display: window.innerWidth < 480 ? 'none' : 'block' }} />
+ 
                             {/* Play Button (Matches Speaking Mic Button) */}
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                                 <motion.button
@@ -411,7 +411,7 @@ export default function Listening() {
                                 </p>
                             </div>
                         </div>
-
+ 
                         {currentQuestion.audio_data && (
                             <audio
                                 ref={audioRef}
@@ -423,8 +423,8 @@ export default function Listening() {
                                 style={{ display: 'none' }}
                             />
                         )}
-
-                        <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '0' }}>
+ 
+                        <p style={{ color: '#6B7280', marginBottom: '0' }}>
                             {currentQuestion.audio_data ? (isPlaying ? 'Listen carefully to the audio' : 'Click play to start the exercise') : 'Read the content above to answer'}
                         </p>
                     </div>
@@ -526,7 +526,7 @@ export default function Listening() {
                         </AnimatePresence>
 
                         {/* Actions */}
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px', flexWrap: 'wrap' }}>
                             <button
                                 onClick={handleReset}
                                 style={{

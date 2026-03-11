@@ -53,9 +53,10 @@ const chat = async (systemPrompt, userMessage) => {
  * @returns {Promise<string>} AI feedback text
  */
 export const getAISpeakingFeedback = async (transcript, topic, wpm) => {
-    const system = `You are an expert English speaking coach for language learners. 
+    const system = `You are an expert English speaking coach specializing in Indian English (IndE). 
 Give concise, encouraging, and specific feedback in 2-3 sentences. 
-Focus on fluency, clarity, and content. Always be constructive.`
+Focus on fluency, clarity, and content. Always be constructive.
+Note: Respect Indian cultural terms, regional accents, and proper nouns.`
 
     const user = `The student spoke about "${topic}" at ${wpm} WPM.
 Their transcript: "${transcript.substring(0, 500)}"
@@ -72,9 +73,10 @@ Provide brief coaching feedback.`
  * @returns {Promise<string>} AI feedback text
  */
 export const getAIWritingFeedback = async (text, topic, errorCount) => {
-    const system = `You are an expert English writing coach for language learners.
+    const system = `You are an expert English writing coach specializing in Indian English (IndE).
 Give concise, constructive feedback in 2-3 sentences covering content quality, 
-vocabulary range, and one key improvement suggestion. Be encouraging.`
+vocabulary range, and one key improvement suggestion. 
+Respect Indian cultural context, names, and regional terms.`
 
     const user = `Topic: "${topic || 'General Writing'}"
 Text: "${text.substring(0, 600)}"
@@ -138,6 +140,45 @@ Return ONLY valid JSON array with exactly 5 topics in this format:
         }
     } catch (e) {
         console.warn('Failed to parse AI topics:', e)
+    }
+    return null
+}
+
+/**
+ * Perform a deep analysis of writing content with knowledge of Indian English and culture.
+ * @param {string} text - User's writing
+ * @returns {Promise<Object>} Deep evaluation
+ */
+export const evaluateWritingAI = async (text) => {
+    const system = `You are a professional English editor specializing in Indian English (IndE). 
+Your task is to analyze the student's writing for grammar, vocabulary, and content.
+CRITICAL: Do NOT flag Indian names (e.g., Arjun, Priya), places (e.g., Chennai, Madurai), festivals (e.g., Diwali, Pongal), or cultural terms (e.g., Bharatanatyam, Cholas, Vedas) as spelling errors. 
+
+Return ONLY valid JSON in this exact format:
+{
+  "score": 85,
+  "feedback": {
+    "grammar": "Brief summary of grammar quality.",
+    "content": "Brief summary of content quality.",
+    "vocabulary": "Brief summary of vocabulary range."
+  },
+  "suggestions": [
+     "Specific suggestion 1",
+     "Specific suggestion 2"
+  ]
+}
+Scores are 0-100. If the content is culturally relevant to India, factor that into a positive vocabulary score.`
+
+    const user = `Analyze this writing text: "${text.substring(0, 2000)}"`
+
+    const result = await chat(system, user)
+    if (!result) return null
+
+    try {
+        const jsonMatch = result.match(/\{[\s\S]*\}/)
+        if (jsonMatch) return JSON.parse(jsonMatch[0])
+    } catch (e) {
+        console.error('AI Writing Analysis failed to parse JSON:', e)
     }
     return null
 }

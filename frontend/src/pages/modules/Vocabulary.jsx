@@ -786,47 +786,95 @@ export default function Vocabulary() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                 {/* Header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
                         <div style={{
                             width: '48px', height: '48px', borderRadius: '12px',
                             background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            boxShadow: '0 4px 12px rgba(139, 92, 246, 0.2)'
+                            boxShadow: '0 4px 12px rgba(139, 92, 246, 0.2)',
+                            flexShrink: 0,
                         }}>
                             <Book size={24} style={{ color: 'white' }} />
                         </div>
                         <div>
-                            <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>
+                            <h1 style={{ fontWeight: '700', color: '#111827', margin: 0 }}>
                                 Vocabulary Builder
                             </h1>
-                            <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
-                                Expand your lexicon with definitions, synonyms, and training
+                            <p style={{ color: '#6B7280', margin: 0 }}>
+                                Learn and master new words with ease
                             </p>
                         </div>
                     </div>
+                </div>
 
-                    {/* Tab bar */}
-                    <div style={{
-                        display: 'flex', backgroundColor: 'white', padding: '4px',
-                        borderRadius: '12px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                        border: '1px solid #E5E7EB'
+                {/* Tabs & Search Bar */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '28px',
+                    gap: '20px',
+                    flexWrap: 'wrap'
+                }}>
+                    <nav style={{
+                        display: 'flex',
+                        backgroundColor: 'white',
+                        padding: '4px',
+                        borderRadius: '12px',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                        border: '1px solid #E5E7EB',
+                        flexWrap: 'wrap'
                     }}>
-                        {tabs.map(t => (
+                        {tabs.map((tab) => (
                             <button
-                                key={t.key}
-                                onClick={() => setActiveTab(t.key)}
+                                key={tab.key}
+                                onClick={() => setActiveTab(tab.key)}
                                 style={{
-                                    padding: '8px 16px', borderRadius: '8px', border: 'none',
-                                    backgroundColor: activeTab === t.key ? '#8B5CF6' : 'transparent',
-                                    color: activeTab === t.key ? 'white' : '#6B7280',
-                                    fontSize: '14px', fontWeight: '500', cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    display: 'flex', alignItems: 'center', gap: '6px'
-                                }}>
-                                {t.icon} {t.label}
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '10px 18px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    backgroundColor: activeTab === tab.key ? '#8B5CF6' : 'transparent',
+                                    color: activeTab === tab.key ? 'white' : '#6B7280',
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                {tab.icon} {tab.label}
                             </button>
                         ))}
-                    </div>
+                    </nav>
+
+                    <form onSubmit={handleSearch} style={{ flex: '1 1 300px', maxWidth: '100%', position: 'relative' }}>
+                        <input
+                            type="text"
+                            value={searchWord}
+                            onChange={(e) => setSearchWord(e.target.value)}
+                            placeholder="Enter any word to explore..."
+                            style={{
+                                width: '100%',
+                                padding: '14px 20px 14px 48px',
+                                borderRadius: '12px',
+                                border: '2px solid #E5E7EB',
+                                fontSize: '15px',
+                                outline: 'none',
+                                transition: 'all 0.2s',
+                                boxSizing: 'border-box'
+                            }}
+                            onFocus={(e) => e.target.style.borderColor = '#8B5CF6'}
+                            onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+                        />
+                        <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                        {searching && (
+                            <div style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)' }}>
+                                <div style={{ width: '16px', height: '16px', border: '2px solid #E5E7EB', borderTop: '2px solid #8B5CF6', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                            </div>
+                        )}
+                    </form>
                 </div>
 
                 {/* Tab Content */}
@@ -834,36 +882,9 @@ export default function Vocabulary() {
                     {activeTab === 'search' && (
                         <motion.div key="search" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                             <div style={{
-                                backgroundColor: 'white', borderRadius: '16px', padding: '32px',
+                                backgroundColor: 'white', borderRadius: '16px', padding: 'min(32px, 5vw)',
                                 boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '24px', border: '1px solid #F3F4F6'
                             }}>
-                                <form onSubmit={handleSearch} style={{ position: 'relative', marginBottom: searchResult ? '40px' : '0' }}>
-                                    <input
-                                        type="text" value={searchWord} onChange={(e) => setSearchWord(e.target.value)}
-                                        placeholder="Type a word to define..."
-                                        style={{
-                                            width: '100%', padding: '24px 24px 24px 64px', borderRadius: '16px',
-                                            border: '2px solid #E5E7EB', fontSize: '18px', outline: 'none',
-                                            backgroundColor: '#F9FAFB', transition: 'all 0.2s', boxSizing: 'border-box'
-                                        }}
-                                        onFocus={(e) => e.target.style.borderColor = '#8B5CF6'}
-                                        onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
-                                    />
-                                    <Search size={24} style={{ position: 'absolute', left: '24px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-                                    <button
-                                        type="submit"
-                                        disabled={searching || !searchWord.trim()}
-                                        style={{
-                                            position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)',
-                                            padding: '12px 24px', borderRadius: '10px', border: 'none',
-                                            background: searching ? '#D1D5DB' : 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
-                                            color: 'white', fontWeight: '600', fontSize: '14px',
-                                            cursor: searching ? 'default' : 'pointer', transition: 'all 0.2s',
-                                            boxShadow: searching ? 'none' : '0 4px 12px rgba(139,92,246,0.3)'
-                                        }}>
-                                        {searching ? 'Searching...' : 'Search'}
-                                    </button>
-                                </form>
 
                                 {!searchResult && !searching && (
                                     <div style={{ padding: '60px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.6 }}>

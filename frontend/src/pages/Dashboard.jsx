@@ -23,10 +23,26 @@ const modules = [
 ]
 
 export default function Dashboard() {
-    const { user } = useAuth()
+    const { user, sessionStartTime } = useAuth()
     const [stats, setStats] = useState(null)
     const [chartData, setChartData] = useState([])
     const [loadingStats, setLoadingStats] = useState(true)
+    const [currentSessionMinutes, setCurrentSessionMinutes] = useState(0)
+
+    useEffect(() => {
+        if (!sessionStartTime) return
+
+        const updateElapsed = () => {
+            const now = new Date()
+            const diffMs = now - sessionStartTime
+            const diffMins = Math.floor(diffMs / 60000)
+            setCurrentSessionMinutes(diffMins)
+        }
+
+        updateElapsed()
+        const interval = setInterval(updateElapsed, 1000)
+        return () => clearInterval(interval)
+    }, [sessionStartTime])
 
     useEffect(() => {
         loadStats()
@@ -72,7 +88,7 @@ export default function Dashboard() {
         },
         {
             icon: Clock, label: 'Time Spent', color: '#8B5CF6', bg: '#F5F3FF',
-            value: stats ? `${stats.timeSpentMinutes || 0}m` : '—'
+            value: stats ? `${(stats.timeSpentMinutes || 0) + currentSessionMinutes}m` : '—'
         },
     ]
 
@@ -85,14 +101,14 @@ export default function Dashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     style={{ marginBottom: '32px' }}
                 >
-                    <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#111827', marginBottom: '8px' }}>
+                    <h1 style={{ fontWeight: '700', color: '#111827', marginBottom: '8px' }}>
                         Welcome back, {user?.full_name || 'Student'}! 👋
                     </h1>
-                    <p style={{ fontSize: '16px', color: '#6B7280' }}>
+                    <p style={{ color: '#6B7280' }}>
                         Continue your learning journey where you left off
                     </p>
                 </motion.div>
-
+ 
                 {/* Stats Grid */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -104,11 +120,8 @@ export default function Dashboard() {
                     {statCards.map((stat, i) => (
                         <div
                             key={i}
+                            className="card"
                             style={{
-                                backgroundColor: '#FFFFFF',
-                                borderRadius: '16px',
-                                padding: '24px',
-                                border: '1px solid #E5E7EB',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '16px',
@@ -122,11 +135,12 @@ export default function Dashboard() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
+                                flexShrink: 0,
                             }}>
                                 <stat.icon size={24} style={{ color: stat.color }} />
                             </div>
-                            <div>
-                                <div style={{ fontSize: '24px', fontWeight: '700', color: '#111827' }}>
+                            <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: '24px', fontWeight: '700', color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {loadingStats ? <span style={{ color: '#D1D5DB' }}>—</span> : stat.value}
                                 </div>
                                 <div style={{ fontSize: '13px', color: '#6B7280' }}>{stat.label}</div>

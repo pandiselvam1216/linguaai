@@ -167,13 +167,36 @@ export default function AdminDashboard() {
             minHeight: '100vh',
         }}>
             {/* Header */}
-            <div style={{ marginBottom: '32px' }}>
-                <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#111827', margin: 0, marginBottom: '8px' }}>
-                    Admin Dashboard
-                </h1>
-                <p style={{ fontSize: '15px', color: '#6B7280', margin: 0 }}>
-                    Welcome back! Here's an overview of your platform.
-                </p>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '24px',
+                flexWrap: 'wrap',
+                gap: '20px'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                    }}>
+                        <Activity size={24} style={{ color: 'white' }} />
+                    </div>
+                    <div>
+                        <h1 style={{ fontWeight: '700', color: '#111827', margin: 0 }}>
+                            Admin Dashboard
+                        </h1>
+                        <p style={{ color: '#6B7280', margin: 0 }}>
+                            Welcome back! Here's an overview of your platform.
+                        </p>
+                    </div>
+                </div>
             </div>
 
             {/* Stats Grid */}

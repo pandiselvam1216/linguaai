@@ -79,18 +79,19 @@ export default function Pricing() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
+                            flexShrink: 0,
                         }}>
                             <span style={{ color: 'white', fontWeight: 'bold', fontSize: '18px' }}>N</span>
                         </div>
-                        <span style={{ fontWeight: '600', fontSize: '20px', color: '#1F2937' }}>NeuraLingua</span>
+                        <span style={{ fontWeight: '600', fontSize: '20px', color: '#1F2937', display: window.innerWidth < 480 ? 'none' : 'block' }}>NeuraLingua</span>
                     </Link>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <Link to="/login" style={{ color: '#374151', textDecoration: 'none', fontSize: '14px', fontWeight: '500', padding: '10px 20px' }}>
+                        <Link to="/login" style={{ color: '#374151', textDecoration: 'none', fontSize: '14px', fontWeight: '500', padding: '10px 12px' }}>
                             Sign in
                         </Link>
                         <Link to="/register" style={{
                             backgroundColor: '#1A73E8', color: 'white', textDecoration: 'none',
-                            fontSize: '14px', fontWeight: '500', padding: '10px 24px', borderRadius: '8px',
+                            fontSize: '14px', fontWeight: '500', padding: '10px 16px', borderRadius: '8px',
                         }}>
                             Get Started
                         </Link>
@@ -99,12 +100,12 @@ export default function Pricing() {
             </nav>
 
             {/* Header */}
-            <section style={{ paddingTop: '140px', paddingBottom: '60px', textAlign: 'center' }}>
+            <section style={{ paddingTop: '120px', paddingBottom: '40px', textAlign: 'center' }}>
                 <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
-                    <h1 style={{ fontSize: '48px', fontWeight: '700', color: '#111827', marginBottom: '16px' }}>
+                    <h1 style={{ fontWeight: '700', color: '#111827', marginBottom: '16px' }}>
                         Simple, Transparent Pricing
                     </h1>
-                    <p style={{ fontSize: '18px', color: '#6B7280', maxWidth: '500px', margin: '0 auto' }}>
+                    <p style={{ color: '#6B7280', maxWidth: '500px', margin: '0 auto' }}>
                         Choose the plan that fits your institution's needs
                     </p>
                 </div>
@@ -113,16 +114,15 @@ export default function Pricing() {
             {/* Pricing Cards */}
             <section style={{ paddingBottom: '60px' }}>
                 <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 24px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '32px' }}>
+                    <div className="grid-2col" style={{ gap: '32px' }}>
                         {plans.map((plan, i) => (
                             <motion.div
                                 key={i}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.1 }}
+                                className="card"
                                 style={{
-                                    backgroundColor: '#FFFFFF',
-                                    borderRadius: '20px',
                                     padding: '40px',
                                     border: plan.popular ? `2px solid ${plan.color}` : '1px solid #E5E7EB',
                                     boxShadow: plan.popular ? `0 8px 30px ${plan.color}20` : '0 4px 20px rgba(0,0,0,0.06)',
@@ -254,7 +254,7 @@ export default function Pricing() {
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                        <div className="grid-2col" style={{ gap: '24px' }}>
                             <div style={{
                                 backgroundColor: '#EFF6FF',
                                 borderRadius: '12px',

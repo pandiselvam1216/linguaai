@@ -357,6 +357,8 @@ export default function StudentManagement() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 marginBottom: '24px',
+                flexWrap: 'wrap',
+                gap: '20px'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{
@@ -367,20 +369,21 @@ export default function StudentManagement() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        flexShrink: 0
                     }}>
                         <Users size={24} style={{ color: 'white' }} />
                     </div>
                     <div>
-                        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>
+                        <h1 style={{ fontWeight: '700', color: '#111827', margin: 0 }}>
                             Student Management
                         </h1>
-                        <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
+                        <p style={{ color: '#6B7280', margin: 0 }}>
                             Add, edit, and manage student accounts
                         </p>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                     <input
                         type="file"
                         accept=".csv"
@@ -413,7 +416,7 @@ export default function StudentManagement() {
                         )}
                         Import CSV
                     </label>
-
+ 
                     <button
                         onClick={() => handleOpenModal()}
                         style={{

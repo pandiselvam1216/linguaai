@@ -11,20 +11,20 @@ export default function Terms() {
                 borderBottom: '1px solid #E5E7EB', zIndex: 100,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-                <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '0 min(24px, 5vw)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
                         <img src={logoImg} alt="NeuraLingua" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain' }} />
                         <span style={{ fontWeight: '600', fontSize: '18px', color: '#111827' }}>NeuraLingua</span>
                     </Link>
-                    <Link to="/" style={{ fontSize: '14px', color: '#1A73E8', textDecoration: 'none', fontWeight: '500' }}>← Back to Home</Link>
+                    <Link to="/" style={{ fontSize: '14px', color: '#1A73E8', textDecoration: 'none', fontWeight: '500' }}>Back to Home</Link>
                 </div>
             </nav>
 
             {/* Content */}
             <div style={{ maxWidth: '800px', margin: '0 auto', padding: '112px 24px 80px' }}>
-                <div style={{ backgroundColor: '#fff', borderRadius: '20px', padding: '48px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: '1px solid #E5E7EB' }}>
-                    <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', marginBottom: '8px' }}>Terms of Service</h1>
-                    <p style={{ color: '#6B7280', marginBottom: '40px', fontSize: '14px' }}>NeuraLingua – A product of NeuraGlobal</p>
+                <div style={{ backgroundColor: '#fff', borderRadius: '20px', padding: 'min(48px, 6vw)', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: '1px solid #E5E7EB' }}>
+                    <h1 style={{ fontWeight: '700', color: '#111827', marginBottom: '8px' }}>Terms of Service</h1>
+                    <p style={{ color: '#6B7280', marginBottom: '40px' }}>NeuraLingua – A product of NeuraGlobal</p>
 
                     <p style={{ color: '#374151', lineHeight: 1.8, marginBottom: '32px' }}>
                         By accessing or using the NeuraLingua platform, you agree to the following terms.

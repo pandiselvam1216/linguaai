@@ -5,6 +5,7 @@
  */
 
 import { insertScore } from '../services/supabaseService'
+import { evaluateWritingAI } from '../services/aiService'
 
 const STORAGE_KEY = 'neuraLingua_userState';
 const LT_API_URL = 'https://api.languagetool.org/v2/check';
@@ -196,6 +197,18 @@ export const evaluateSpeaking = (transcript, timeElapsed, targetText = "") => {
 
 export const evaluateWriting = async (text, timeElapsed) => {
     try {
+        // 1. Try Deep AI Analysis first (Indian English Context)
+        const aiEvaluation = await evaluateWritingAI(text)
+        
+        if (aiEvaluation) {
+            saveModuleScore('writing', aiEvaluation.score, timeElapsed)
+            return {
+                success: true,
+                ...aiEvaluation
+            }
+        }
+
+        // 2. Fallback to LanguageTool if AI fails
         const response = await fetch(LT_API_URL, {
             method: 'POST',
             headers: {
@@ -212,17 +225,11 @@ export const evaluateWriting = async (text, timeElapsed) => {
         const data = await response.json();
         const matches = data.matches || [];
 
-        // 1. Calculate Score
         const wordCount = text.trim().split(/\s+/).length;
         const errorCount = matches.length;
-
-        // Simple penalty: 5 points per error, min score 0
         let score = Math.max(0, 100 - (errorCount * 5));
+        if (wordCount < 20) score -= 20;
 
-        // Length bonus/penalty
-        if (wordCount < 20) score -= 20; // Too short penalty
-
-        // 2. Generate Suggestions
         const suggestions = matches.slice(0, 3).map(m =>
             `Current: "${text.substring(m.offset, m.offset + m.length)}". Suggestion: ${m.replacements.map(r => r.value).slice(0, 2).join(", ")}`
         );
@@ -235,7 +242,6 @@ export const evaluateWriting = async (text, timeElapsed) => {
             vocabulary: "Standard vocabulary usage."
         };
 
-        // Save
         saveModuleScore('writing', score, timeElapsed);
 
         return {

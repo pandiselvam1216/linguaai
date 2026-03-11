@@ -212,6 +212,7 @@ export default function Speaking() {
                 alignItems: 'center',
                 gap: '16px',
                 marginBottom: '24px',
+                flexWrap: 'wrap',
             }}>
                 <div style={{
                     width: '48px',
@@ -221,14 +222,15 @@ export default function Speaking() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    flexShrink: 0,
                 }}>
                     <Mic size={24} style={{ color: 'white' }} />
                 </div>
                 <div>
-                    <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>
+                    <h1 style={{ fontWeight: '700', color: '#111827', margin: 0 }}>
                         Speaking Practice
                     </h1>
-                    <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
+                    <p style={{ color: '#6B7280', margin: 0 }}>
                         Improve your pronunciation and fluency with AI feedback
                     </p>
                 </div>
@@ -355,11 +357,8 @@ export default function Speaking() {
                     )}
 
                     {/* Recording Area */}
-                    <div style={{
-                        backgroundColor: 'white',
-                        borderRadius: '16px',
-                        padding: '40px',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    <div className="card" style={{
+                        padding: 'min(40px, 6vw)',
                         textAlign: 'center',
                     }}>
                         {/* Timer + Mic — side by side */}
@@ -367,8 +366,9 @@ export default function Speaking() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '32px',
+                            gap: 'min(32px, 5vw)',
                             marginBottom: '20px',
+                            flexWrap: 'wrap',
                         }}>
                             {/* Circular Timer */}
                             <div style={{ position: 'relative', width: '120px', height: '120px', flexShrink: 0 }}>
@@ -393,10 +393,10 @@ export default function Speaking() {
                                     </p>
                                 </div>
                             </div>
-
-                            {/* Divider */}
-                            <div style={{ width: '1px', height: '80px', backgroundColor: '#E5E7EB' }} />
-
+ 
+                            {/* Divider - hide on small screens when wrapping */}
+                            <div style={{ width: '1px', height: '80px', backgroundColor: '#E5E7EB', display: window.innerWidth < 480 ? 'none' : 'block' }} />
+ 
                             {/* Microphone Button */}
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                                 <motion.button
@@ -423,8 +423,8 @@ export default function Speaking() {
                                 </p>
                             </div>
                         </div>
-
-                        <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '24px' }}>
+ 
+                        <p style={{ color: '#6B7280', marginBottom: '24px' }}>
                             {isRecording ? 'Recording... Click to stop' : 'Click the microphone to start speaking'}
                         </p>
 
@@ -434,6 +434,7 @@ export default function Speaking() {
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '12px',
+                            flexWrap: 'wrap',
                         }}>
                             <button
                                 onClick={handleReset}
@@ -479,7 +480,7 @@ export default function Speaking() {
                                 <Send size={16} />
                                 {submitting ? 'Analyzing...' : 'Get Feedback'}
                             </button>
-
+ 
                             {/* Added Next Topic button */}
                             {feedback && prompts.findIndex(p => p.id === selectedPrompt.id) < prompts.length - 1 && (
                                 <button
@@ -504,6 +505,7 @@ export default function Speaking() {
                                 </button>
                             )}
                         </div>
+
                     </div>
 
                     {/* Transcript */}

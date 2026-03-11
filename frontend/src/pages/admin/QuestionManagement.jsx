@@ -366,13 +366,13 @@ export default function QuestionManagement() {
                     Question saved to database!
                 </div>
             )}
-
-            {/* Header */}
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 marginBottom: '24px',
+                flexWrap: 'wrap',
+                gap: '20px'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{
@@ -383,19 +383,20 @@ export default function QuestionManagement() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        flexShrink: 0
                     }}>
                         <BookOpen size={24} style={{ color: 'white' }} />
                     </div>
                     <div>
-                        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>
+                        <h1 style={{ fontWeight: '700', color: '#111827', margin: 0 }}>
                             Question Management
                         </h1>
-                        <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
+                        <p style={{ color: '#6B7280', margin: 0 }}>
                             Manage questions for all learning modules
                         </p>
                     </div>
                 </div>
-
+ 
                 <button
                     onClick={() => handleOpenModal()}
                     style={{

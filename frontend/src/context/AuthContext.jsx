@@ -1,32 +1,58 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { supabase } from '../utils/supabaseClient'
+import { getLocalState, saveLocalState } from '../utils/localScoring'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [sessionStartTime, setSessionStartTime] = useState(null)
 
     useEffect(() => {
         // Get initial session
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
                 setUser(mapUser(session.user))
+                setSessionStartTime(new Date())
             }
             setLoading(false)
         })
 
         // Listen for auth state changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (session?.user) {
                 setUser(mapUser(session.user))
+                if (event === 'SIGNED_IN' || !sessionStartTime) {
+                    setSessionStartTime(new Date())
+                }
             } else {
                 setUser(null)
+                setSessionStartTime(null)
             }
         })
 
         return () => subscription.unsubscribe()
     }, [])
+
+    useEffect(() => {
+        const saveTime = () => {
+            if (user && sessionStartTime) {
+                const diffMins = Math.floor((new Date() - sessionStartTime) / 60000)
+                if (diffMins > 0) {
+                    const state = getLocalState()
+                    state.metrics.timeSpentMinutes = (state.metrics.timeSpentMinutes || 0) + diffMins
+                    saveLocalState(state)
+                }
+            }
+        }
+
+        window.addEventListener('beforeunload', saveTime)
+        return () => {
+            saveTime()
+            window.removeEventListener('beforeunload', saveTime)
+        }
+    }, [user, sessionStartTime])
 
     const mapUser = (supabaseUser) => ({
         id: supabaseUser.id,
@@ -62,6 +88,7 @@ export function AuthProvider({ children }) {
     const value = {
         user,
         loading,
+        sessionStartTime,
         login,
         register,
         logout,

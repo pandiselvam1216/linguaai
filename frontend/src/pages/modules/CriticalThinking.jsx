@@ -183,7 +183,8 @@ export default function CriticalThinking() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '16px',
-                    marginBottom: '32px'
+                    marginBottom: '32px',
+                    flexWrap: 'wrap',
                 }}>
                     <div style={{
                         width: '48px',
@@ -193,15 +194,16 @@ export default function CriticalThinking() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: '0 4px 12px rgba(236, 72, 153, 0.2)'
+                        boxShadow: '0 4px 12px rgba(236, 72, 153, 0.2)',
+                        flexShrink: 0,
                     }}>
                         <Brain size={24} style={{ color: 'white' }} />
                     </div>
                     <div>
-                        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>
+                        <h1 style={{ fontWeight: '700', color: '#111827', margin: 0 }}>
                             Critical Thinking (JAM)
                         </h1>
-                        <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
+                        <p style={{ color: '#6B7280', margin: 0 }}>
                             Just A Minute: Develop analytical thinking and communication skills
                         </p>
                     </div>
@@ -429,12 +431,13 @@ export default function CriticalThinking() {
                                     )}
 
                                     {/* Control Bar */}
-                                    <div style={{ display: 'flex', gap: '16px' }}>
+                                    <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                                         {!isTimerActive && !result ? (
                                             <button
                                                 onClick={startSession}
                                                 style={{
                                                     flex: 1,
+                                                    minWidth: '200px',
                                                     padding: '16px',
                                                     borderRadius: '12px',
                                                     border: 'none',
@@ -460,6 +463,7 @@ export default function CriticalThinking() {
                                                 onClick={stopSession}
                                                 style={{
                                                     flex: 1,
+                                                    minWidth: '200px',
                                                     padding: '16px',
                                                     borderRadius: '12px',
                                                     border: 'none',
@@ -479,12 +483,13 @@ export default function CriticalThinking() {
                                                 <Square size={20} /> Stop
                                             </button>
                                         ) : null}
-
+ 
                                         {(response.trim() && !result) && (
                                             <button
                                                 onClick={handleSubmit}
                                                 style={{
                                                     flex: 1,
+                                                    minWidth: '200px',
                                                     padding: '16px',
                                                     borderRadius: '12px',
                                                     border: 'none',

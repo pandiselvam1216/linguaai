@@ -100,7 +100,7 @@ export default function Navbar({ onMenuClick }) {
                     backgroundColor: 'transparent',
                     cursor: 'pointer',
                     color: '#6B7280',
-                    display: 'flex',
+                    display: 'none',
                     alignItems: 'center',
                     flexShrink: 0,
                 }}

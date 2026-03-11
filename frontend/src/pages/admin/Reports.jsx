@@ -170,14 +170,15 @@ export default function Reports() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        flexShrink: 0
                     }}>
                         <BarChart2 size={24} style={{ color: 'white' }} />
                     </div>
                     <div>
-                        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>
+                        <h1 style={{ fontWeight: '700', color: '#111827', margin: 0 }}>
                             Student Reports
                         </h1>
-                        <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
+                        <p style={{ color: '#6B7280', margin: 0 }}>
                             View and export student performance data
                         </p>
                     </div>

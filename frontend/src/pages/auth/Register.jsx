@@ -43,18 +43,16 @@ export default function Register() {
     }
 
     return (
-        <div style={{
+        <div className="page-container" style={{
             minHeight: '100vh',
-            backgroundColor: '#F9FAFB',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '24px',
         }}>
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                style={{ width: '100%', maxWidth: '420px' }}
+                className="auth-container"
             >
                 {/* Logo */}
                 <Link to="/" style={{
@@ -79,17 +77,11 @@ export default function Register() {
                 </Link>
 
                 {/* Card */}
-                <div style={{
-                    backgroundColor: '#FFFFFF',
-                    borderRadius: '20px',
-                    padding: '40px',
-                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-                    border: '1px solid #E5E7EB',
-                }}>
-                    <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#111827', textAlign: 'center', marginBottom: '8px' }}>
+                <div className="card" style={{ padding: '40px' }}>
+                    <h1 style={{ fontWeight: '700', color: '#111827', textAlign: 'center', marginBottom: '8px' }}>
                         Create account
                     </h1>
-                    <p style={{ fontSize: '16px', color: '#6B7280', textAlign: 'center', marginBottom: '32px' }}>
+                    <p style={{ color: '#6B7280', textAlign: 'center', marginBottom: '32px' }}>
                         Start your learning journey today
                     </p>
 
