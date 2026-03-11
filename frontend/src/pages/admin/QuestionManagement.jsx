@@ -372,7 +372,11 @@ export default function QuestionManagement() {
                 justifyContent: 'space-between',
                 marginBottom: '24px',
                 flexWrap: 'wrap',
+<<<<<<< HEAD
                 gap: '20px'
+=======
+                gap: '16px',
+>>>>>>> 6342037c4ef8c521c1ccee76e53787385882cb93
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{
@@ -428,6 +432,7 @@ export default function QuestionManagement() {
                 padding: '8px',
                 borderRadius: '12px',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                flexWrap: 'wrap',
             }}>
                 {modules.map((module) => {
                     const Icon = moduleIcons[module.key]
@@ -532,6 +537,7 @@ export default function QuestionManagement() {
                                     alignItems: 'flex-start',
                                     justifyContent: 'space-between',
                                     gap: '16px',
+                                    flexWrap: 'wrap',
                                 }}
                             >
                                 <div style={{ flex: 1 }}>

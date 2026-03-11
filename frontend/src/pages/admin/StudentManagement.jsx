@@ -15,6 +15,8 @@ export default function StudentManagement() {
     const [search, setSearch] = useState('')
     const [showModal, setShowModal] = useState(false)
     const [isImporting, setIsImporting] = useState(false)
+    const [showPreviewModal, setShowPreviewModal] = useState(false)
+    const [previewResults, setPreviewResults] = useState({ success: [], skipped: [] })
     const [editingStudent, setEditingStudent] = useState(null)
     const [formData, setFormData] = useState({ email: '', password: '', full_name: '', is_active: true })
     const [saving, setSaving] = useState(false)
@@ -115,7 +117,7 @@ export default function StudentManagement() {
                 if (error) throw error
             } else {
                 // Must create in auth.users first to satisfy foreign key constraint
-                const { data: authData, error: authError } = await supabaseAuthClient.auth.signUp({
+                const { data: authData, error: authError } = await supabase.auth.signUp({
                     email: formData.email,
                     password: formData.password || "TempPass123!",
                     options: {
@@ -185,7 +187,7 @@ export default function StudentManagement() {
             // Replace \r to handle Windows line endings, then filter empty lines.
             const lines = text.replace(/\r/g, '').split('\n').filter(l => l.trim().length > 0);
             if (lines.length < 2) {
-                showAlert('Invalid CSV', 'CSV must contain a header row and at least one data row.', 'danger')
+                alert("CSV must contain a header row and at least one data row.");
                 return;
             }
 
@@ -195,7 +197,7 @@ export default function StudentManagement() {
             const emailIdx = header.findIndex(h => h.includes('email'));
 
             if (nameIdx === -1 || emailIdx === -1) {
-                showAlert('Missing Columns', `CSV header must contain 'name' and 'email' columns. Found: ${header.join(', ')}`, 'danger')
+                alert(`CSV header must contain 'name' and 'email' columns. Found: ${header.join(', ')}`);
                 return;
             }
 
@@ -255,14 +257,10 @@ export default function StudentManagement() {
                 }
             }
 
-            if (insertPayload.length === 0) {
-                showAlert('Import Finished', `0 new students added. ${skipped} skipped.\n\nErrors:\n${errorList.slice(0, 5).join('\n')}${errorList.length > 5 ? '\n...' : ''}`, 'warning')
+            if (insertPayload.length === 0 && skipped === 0) {
+                alert("CSV was empty or had no valid data.");
                 return;
             }
-
-            // Success!
-            let successMsg = `Import successful: ${insertPayload.length} students added. Passwords auto-generated and downloading as CSV now.\n`;
-            if (skipped > 0) successMsg += `${skipped} skipped:\n${errorList.slice(0, 5).join('\n')}${errorList.length > 5 ? '\n...' : ''}`;
 
             // Generate CSV for credentials download
             let csvContent = "email,password\n";
@@ -270,28 +268,52 @@ export default function StudentManagement() {
                 csvContent += `${p.email},${p.tempPassword}\n`;
             });
 
-            // Trigger download
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", `student_credentials_${new Date().toISOString().split('T')[0]}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
+            // Trigger download if there are successful inserts
+            if (insertPayload.length > 0) {
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `student_credentials_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            }
 
-            showAlert('Import Successful', successMsg, 'success')
+            // Show results in custom Modal instead of alert
+            setPreviewResults({
+                success: insertPayload,
+                skipped: errorList
+            });
+            setShowPreviewModal(true);
             fetchStudents();
 
         } catch (error) {
             console.error("Error importing CSV:", error);
-            showAlert('Import Failed', "Failed to import CSV: " + error.message, 'danger')
+            alert("Failed to import CSV: " + error.message);
         } finally {
             setIsImporting(false);
             e.target.value = null; // Clear input
         }
     };
+
+    const downloadPreviewCSV = () => {
+        let csvContent = "email,password\n";
+        previewResults.success.forEach(p => {
+            csvContent += `${p.email},${p.tempPassword}\n`;
+        });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `student_credentials_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    };
+
 
     const handleDelete = (studentId) => {
         setAlertConfig({
@@ -358,7 +380,7 @@ export default function StudentManagement() {
                 justifyContent: 'space-between',
                 marginBottom: '24px',
                 flexWrap: 'wrap',
-                gap: '20px'
+                gap: '16px',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{
@@ -452,6 +474,7 @@ export default function StudentManagement() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '16px',
+                    flexWrap: 'wrap',
                 }}>
                     <div style={{
                         flex: 1,
@@ -489,7 +512,7 @@ export default function StudentManagement() {
             <div style={{
                 backgroundColor: 'white',
                 borderRadius: '16px',
-                overflow: 'hidden',
+                overflowX: 'auto',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
             }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -512,7 +535,7 @@ export default function StudentManagement() {
                                 style={{ borderTop: '1px solid #F3F4F6' }}
                             >
                                 <td style={{ padding: '16px 24px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                                         <div style={{
                                             width: '40px',
                                             height: '40px',
@@ -859,6 +882,213 @@ export default function StudentManagement() {
                 type={alertConfig.type}
                 confirmText={alertConfig.confirmText || 'OK'}
             />
+
+            {/* Preview Results Modal */}
+            <AnimatePresence>
+                {showPreviewModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            backgroundColor: 'rgba(0,0,0,0.6)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1100,
+                            backdropFilter: 'blur(4px)',
+                            padding: '20px'
+                        }}
+                        onClick={() => setShowPreviewModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            exit={{ scale: 0.9, y: 20, opacity: 0 }}
+                            style={{
+                                backgroundColor: 'white',
+                                borderRadius: '24px',
+                                width: '100%',
+                                maxWidth: '700px',
+                                maxHeight: '90vh',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+                                overflow: 'hidden'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div style={{
+                                padding: '24px 32px',
+                                background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
+                                color: 'white',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between'
+                            }}>
+                                <div>
+                                    <h2 style={{ fontSize: '20px', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div style={{ backgroundColor: '#3B82F6', padding: '6px', borderRadius: '8px', display: 'flex' }}>
+                                            <Upload size={18} />
+                                        </div>
+                                        Import Results
+                                    </h2>
+                                    <p style={{ fontSize: '13px', color: '#94A3B8', margin: '4px 0 0 0' }}>
+                                        {previewResults.success.length} imported successfully, {previewResults.skipped.length} entries skipped.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setShowPreviewModal(false)}
+                                    style={{
+                                        padding: '8px',
+                                        borderRadius: '12px',
+                                        border: 'none',
+                                        backgroundColor: 'rgba(255,255,255,0.1)',
+                                        color: '#E2E8F0',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.2)'}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
+                                {previewResults.success.length > 0 && (
+                                    <div style={{ marginBottom: '32px' }}>
+                                        <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#1E293B', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22C55E' }}></div>
+                                            Successfully Generated Credentials
+                                        </h3>
+                                        <div style={{
+                                            backgroundColor: '#F8FAFC',
+                                            borderRadius: '16px',
+                                            border: '1px solid #E2E8F0',
+                                            overflow: 'hidden'
+                                        }}>
+                                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                                <thead>
+                                                    <tr style={{ backgroundColor: '#F1F5F9' }}>
+                                                        <th style={{ padding: '12px 20px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748B', textTransform: 'uppercase' }}>Email Address</th>
+                                                        <th style={{ padding: '12px 20px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748B', textTransform: 'uppercase' }}>Password</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {previewResults.success.map((res, i) => (
+                                                        <tr key={i} style={{ borderTop: i > 0 ? '1px solid #E2E8F0' : 'none' }}>
+                                                            <td style={{ padding: '12px 20px', fontSize: '14px', color: '#334155' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                    <Mail size={14} style={{ color: '#94A3B8' }} />
+                                                                    {res.email}
+                                                                </div>
+                                                            </td>
+                                                            <td style={{ padding: '12px 20px' }}>
+                                                                <code style={{
+                                                                    backgroundColor: '#EFF6FF',
+                                                                    color: '#2563EB',
+                                                                    padding: '4px 8px',
+                                                                    borderRadius: '6px',
+                                                                    fontSize: '13px',
+                                                                    fontWeight: '600',
+                                                                    letterSpacing: '0.5px'
+                                                                }}>{res.tempPassword}</code>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {previewResults.skipped.length > 0 && (
+                                    <div>
+                                        <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#1E293B', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#EF4444' }}></div>
+                                            Skipped Entries
+                                        </h3>
+                                        <div style={{ display: 'grid', gap: '10px' }}>
+                                            {previewResults.skipped.map((err, i) => (
+                                                <div key={i} style={{
+                                                    padding: '12px 16px',
+                                                    borderRadius: '12px',
+                                                    backgroundColor: '#FFF1F2',
+                                                    border: '1px solid #FECDD3',
+                                                    color: '#9F1239',
+                                                    fontSize: '13px',
+                                                    display: 'flex',
+                                                    alignItems: 'flex-start',
+                                                    gap: '10px'
+                                                }}>
+                                                    <X size={16} style={{ marginTop: '1px', flexShrink: 0 }} />
+                                                    {err}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Footer */}
+                            <div style={{
+                                padding: '24px 32px',
+                                backgroundColor: '#F8FAFC',
+                                borderTop: '1px solid #E2E8F0',
+                                display: 'flex',
+                                gap: '12px',
+                                justifyContent: 'flex-end'
+                            }}>
+                                <button
+                                    onClick={() => setShowPreviewModal(false)}
+                                    style={{
+                                        padding: '10px 20px',
+                                        borderRadius: '12px',
+                                        border: '1px solid #E2E8F0',
+                                        backgroundColor: 'white',
+                                        color: '#475569',
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Close
+                                </button>
+                                {previewResults.success.length > 0 && (
+                                    <button
+                                        onClick={downloadPreviewCSV}
+                                        style={{
+                                            padding: '10px 20px',
+                                            borderRadius: '12px',
+                                            border: 'none',
+                                            background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                                            color: 'white',
+                                            fontSize: '14px',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                                        }}
+                                    >
+                                        <Download size={18} />
+                                        Download CSV
+                                    </button>
+                                )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
         </div>
     )
 }

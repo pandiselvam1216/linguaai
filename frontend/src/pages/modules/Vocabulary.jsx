@@ -4,7 +4,7 @@ import {
     Search, BookmarkPlus, Volume2, Trash2, Book,
     Sparkles, ArrowRight, BookmarkCheck, X, Dumbbell,
     ChevronRight, ChevronLeft, Check, RotateCcw, Trophy,
-    Zap, PenLine, Brain
+    Zap, PenLine, Brain, CheckCircle
 } from 'lucide-react'
 import api from '../../services/api'
 import { saveModuleScore } from '../../utils/localScoring'
@@ -21,7 +21,7 @@ function shuffle(arr) {
 
 // ─── Trainer Sub-components ──────────────────────────────────────────────────
 
-function ModeCard({ icon, title, description, color, onClick }) {
+function ModeCard({ icon, title, description, color, onClick, isCompleted }) {
     return (
         <motion.button
             whileHover={{ y: -6, boxShadow: `0 20px 40px ${color}30` }}
@@ -35,7 +35,8 @@ function ModeCard({ icon, title, description, color, onClick }) {
                 cursor: 'pointer',
                 textAlign: 'left',
                 width: '100%',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
+                position: 'relative'
             }}
         >
             <div style={{
@@ -47,7 +48,10 @@ function ModeCard({ icon, title, description, color, onClick }) {
             }}>
                 {icon}
             </div>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: '0 0 8px' }}>{title}</h3>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {title}
+                {isCompleted && <CheckCircle size={18} style={{ color: '#22C55E' }} />}
+            </h3>
             <p style={{ fontSize: '14px', color: '#6B7280', margin: 0, lineHeight: '1.5' }}>{description}</p>
             <div style={{
                 marginTop: '20px', display: 'flex', alignItems: 'center',
@@ -522,7 +526,7 @@ function SummaryScreen({ score, total, onRetry, onHome }) {
 }
 
 // ── Trainer Tab ───────────────────────────────────────────────────────────────
-function TrainerTab({ savedWords }) {
+function TrainerTab({ savedWords, completedModes, onModeComplete }) {
     const [mode, setMode] = useState(null) // null | 'flashcard' | 'mcq' | 'fill'
     const [sessionWords, setSessionWords] = useState([])
 
@@ -530,6 +534,11 @@ function TrainerTab({ savedWords }) {
         if (savedWords.length < 4) return
         setSessionWords(shuffle(savedWords))
         setMode(m)
+    }
+
+    const handleFinish = (m) => {
+        onModeComplete(m)
+        setMode(null)
     }
 
     const notEnough = savedWords.length < 4
@@ -554,7 +563,7 @@ function TrainerTab({ savedWords }) {
                 <button onClick={() => setMode(null)} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '24px', background: 'none', border: 'none', color: '#8B5CF6', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
                     <ChevronLeft size={16} /> All Modes
                 </button>
-                <FlashcardMode words={sessionWords} onFinish={() => setMode(null)} />
+                <FlashcardMode words={sessionWords} onFinish={() => handleFinish('flashcard')} />
             </div>
         )
     }
@@ -565,7 +574,7 @@ function TrainerTab({ savedWords }) {
                 <button onClick={() => setMode(null)} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '24px', background: 'none', border: 'none', color: '#8B5CF6', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
                     <ChevronLeft size={16} /> All Modes
                 </button>
-                <MultipleChoiceMode words={sessionWords} onFinish={() => setMode(null)} />
+                <MultipleChoiceMode words={sessionWords} onFinish={() => handleFinish('mcq')} />
             </div>
         )
     }
@@ -576,7 +585,7 @@ function TrainerTab({ savedWords }) {
                 <button onClick={() => setMode(null)} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '24px', background: 'none', border: 'none', color: '#8B5CF6', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
                     <ChevronLeft size={16} /> All Modes
                 </button>
-                <FillBlankMode words={sessionWords} onFinish={() => setMode(null)} />
+                <FillBlankMode words={sessionWords} onFinish={() => handleFinish('fill')} />
             </div>
         )
     }
@@ -599,6 +608,7 @@ function TrainerTab({ savedWords }) {
                     description="Flip through cards. Mark words you know vs. still learning."
                     color="#8B5CF6"
                     onClick={() => startMode('flashcard')}
+                    isCompleted={completedModes.includes('flashcard')}
                 />
                 <ModeCard
                     icon={<Brain size={28} color="white" />}
@@ -606,6 +616,7 @@ function TrainerTab({ savedWords }) {
                     description="Read a definition and pick the correct word from 4 options."
                     color="#EC4899"
                     onClick={() => startMode('mcq')}
+                    isCompleted={completedModes.includes('mcq')}
                 />
                 <ModeCard
                     icon={<PenLine size={28} color="white" />}
@@ -613,6 +624,7 @@ function TrainerTab({ savedWords }) {
                     description="Read the definition and type the correct word from memory."
                     color="#F59E0B"
                     onClick={() => startMode('fill')}
+                    isCompleted={completedModes.includes('fill')}
                 />
             </div>
         </div>
@@ -627,6 +639,14 @@ export default function Vocabulary() {
     const [searching, setSearching] = useState(false)
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState('search') // 'search' | 'saved' | 'trainer'
+    const [completedModes, setCompletedModes] = useState(() => {
+        const saved = localStorage.getItem('neuraLingua_completed_vocab_modes');
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('neuraLingua_completed_vocab_modes', JSON.stringify(completedModes));
+    }, [completedModes]);
 
     useEffect(() => {
         fetchSavedWords()
@@ -1047,7 +1067,15 @@ export default function Vocabulary() {
                     {activeTab === 'trainer' && (
                         <motion.div key="trainer" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} transition={{ duration: 0.2 }}>
                             <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #F3F4F6' }}>
-                                <TrainerTab savedWords={savedWords} />
+                                <TrainerTab
+                                    savedWords={savedWords}
+                                    completedModes={completedModes}
+                                    onModeComplete={(m) => {
+                                        if (!completedModes.includes(m)) {
+                                            setCompletedModes(prev => [...prev, m])
+                                        }
+                                    }}
+                                />
                             </div>
                         </motion.div>
                     )}

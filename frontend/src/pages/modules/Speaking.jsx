@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, MicOff, Clock, Send, RotateCcw, CheckCircle, AlertCircle, Volume2, ChevronRight } from 'lucide-react'
+import { Mic, MicOff, Clock, Send, RotateCcw, CheckCircle, AlertCircle, Volume2 } from 'lucide-react'
 import { evaluateSpeaking } from '../../utils/localScoring'
 import { getModuleQuestions } from '../../services/questionService'
 import Modal from '../../components/common/Modal'
@@ -17,12 +17,19 @@ export default function Speaking() {
     const recognitionRef = useRef(null)
     const timerRef = useRef(null)
     const [alertConfig, setAlertConfig] = useState({ isOpen: false })
-    const [completedTopics, setCompletedTopics] = useState([]);
+    const [completedTopics, setCompletedTopics] = useState(() => {
+        const saved = localStorage.getItem('neuraLingua_completed_speaking');
+        return saved ? JSON.parse(saved) : [];
+    });
     const [showPopup, setShowPopup] = useState(false);
 
     const showAlert = (title, message, theme = 'info') => {
         setAlertConfig({ isOpen: true, title, message, theme, type: 'alert' })
     }
+
+    useEffect(() => {
+        localStorage.setItem('neuraLingua_completed_speaking', JSON.stringify(completedTopics));
+    }, [completedTopics]);
     useEffect(() => {
         fetchPrompts()
         return () => {
@@ -117,13 +124,6 @@ export default function Speaking() {
         setTimeLeft(selectedPrompt?.time_limit || 60)
     }
 
-    const handleNextTopic = () => {
-        const currentIndex = prompts.findIndex(p => p.id === selectedPrompt.id)
-        if (currentIndex < prompts.length - 1) {
-            handleSelectPrompt(prompts[currentIndex + 1])
-        }
-    }
-
     const handleSubmit = async () => {
         if (!transcript.trim()) return
 
@@ -138,9 +138,6 @@ export default function Speaking() {
             setTimeout(() => {
                 setFeedback(result)
                 setSubmitting(false)
-                if (!completedTopics.includes(selectedPrompt.id)) {
-                    setCompletedTopics(prev => [...prev, selectedPrompt.id])
-                }
             }, 1500)
 
         } catch (error) {
@@ -272,48 +269,35 @@ export default function Speaking() {
                                     opacity: isRecording ? 0.5 : 1,
                                 }}
                             >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ flex: 1 }}>
-                                        <p style={{
-                                            fontSize: '14px',
-                                            fontWeight: selectedPrompt?.id === prompt.id ? '600' : '500',
-                                            color: selectedPrompt?.id === prompt.id ? '#166534' : '#374151',
-                                            margin: 0,
-                                            marginBottom: '4px',
-                                        }}>
-                                            {prompt.title}
-                                        </p>
-                                        <p style={{
-                                            fontSize: '12px',
-                                            color: '#9CA3AF',
-                                            margin: 0,
-                                        }}>
-                                            {prompt.time_limit}s limit
-                                        </p>
-                                    </div>
-                                    {completedTopics.includes(prompt.id) && (
-                                        <CheckCircle size={16} style={{ color: '#22C55E' }} />
-                                    )}
-                                </div>
+                                <p style={{
+                                    fontSize: '14px',
+                                    fontWeight: selectedPrompt?.id === prompt.id ? '600' : '500',
+                                    color: selectedPrompt?.id === prompt.id ? '#166534' : '#374151',
+                                    margin: 0,
+                                    marginBottom: '4px',
+                                }}>
+                                    {prompt.title}
+                                </p>
+                                <p style={{
+                                    fontSize: '12px',
+                                    color: '#9CA3AF',
+                                    margin: 0,
+                                }}>
+                                    {prompt.time_limit}s limit
+                                </p>
                             </motion.button>
                         ))}
                     </div>
                 </div>
 
                 {/* Main Content */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '32px' }}>
                     {/* Prompt Card */}
                     {selectedPrompt && (
                         <motion.div
                             key={selectedPrompt.id}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            style={{
-                                backgroundColor: 'white',
-                                borderRadius: '16px',
-                                padding: '24px',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                            }}
                         >
                             <div style={{
                                 display: 'flex',
@@ -480,6 +464,7 @@ export default function Speaking() {
                                 <Send size={16} />
                                 {submitting ? 'Analyzing...' : 'Get Feedback'}
                             </button>
+<<<<<<< HEAD
  
                             {/* Added Next Topic button */}
                             {feedback && prompts.findIndex(p => p.id === selectedPrompt.id) < prompts.length - 1 && (
@@ -504,6 +489,8 @@ export default function Speaking() {
                                     <ChevronRight size={16} />
                                 </button>
                             )}
+=======
+>>>>>>> 6342037c4ef8c521c1ccee76e53787385882cb93
                         </div>
 
                     </div>
@@ -632,32 +619,6 @@ export default function Speaking() {
                             </motion.div>
                         )}
                     </AnimatePresence>
-
-                    {/* Final Submit Button (Visible on last question or after some progress) */}
-                    {(feedback || prompts.findIndex(p => p.id === selectedPrompt?.id) === prompts.length - 1) && (
-                        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '12px' }}>
-                            <button
-                                onClick={() => setShowPopup(true)}
-                                style={{
-                                    padding: '16px 40px',
-                                    borderRadius: '12px',
-                                    border: 'none',
-                                    background: 'linear-gradient(135deg, #111827 0%, #374151 100%)',
-                                    color: 'white',
-                                    fontSize: '16px',
-                                    fontWeight: '700',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '10px',
-                                    boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
-                                }}
-                            >
-                                <CheckCircle size={20} />
-                                Final Submit
-                            </button>
-                        </div>
-                    )}
                 </div>
             </div>
 

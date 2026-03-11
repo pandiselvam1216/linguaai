@@ -13,6 +13,15 @@ export default function Grammar() {
     const [score, setScore] = useState({ correct: 0, total: 0 })
     const [loading, setLoading] = useState(true)
     const [showExplanation, setShowExplanation] = useState(false)
+    const [showPopup, setShowPopup] = useState(false);
+    const [completedQuestions, setCompletedQuestions] = useState(() => {
+        const saved = localStorage.getItem('neuraLingua_completed_grammar');
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('neuraLingua_completed_grammar', JSON.stringify(completedQuestions));
+    }, [completedQuestions]);
 
     useEffect(() => {
         fetchQuestions()
@@ -57,6 +66,9 @@ export default function Grammar() {
 
             return newScore;
         })
+        if (!completedQuestions.includes(currentIndex)) {
+            setCompletedQuestions(prev => [...prev, currentIndex])
+        }
     }
 
     const handleNext = () => {
@@ -172,6 +184,7 @@ export default function Grammar() {
             <div className="grid-sidebar">
                 {/* Exercises Sidebar */}
                 <div style={{
+
                     backgroundColor: 'white',
                     borderRadius: '16px',
                     padding: '20px',
@@ -397,7 +410,7 @@ export default function Grammar() {
                                 </button>
                             ) : (
                                 <button
-                                    onClick={handleRestart}
+                                    onClick={() => setShowPopup(true)}
                                     style={{
                                         padding: '14px 32px',
                                         borderRadius: '10px',
@@ -410,16 +423,120 @@ export default function Grammar() {
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '8px',
+                                        boxShadow: '0 4px 14px rgba(34, 197, 94, 0.4)',
                                     }}
                                 >
-                                    <RefreshCw size={18} />
-                                    Restart Exercise
+                                    <Award size={18} />
+                                    Final Submit
                                 </button>
                             )}
                         </div>
                     </motion.div>
                 </div>
             </div>
+
+            {/* Completion Popup */}
+            <AnimatePresence>
+                {showPopup && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                            backdropFilter: 'blur(4px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1000,
+                            padding: '20px',
+                        }}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            style={{
+                                backgroundColor: 'white',
+                                borderRadius: '24px',
+                                padding: '40px',
+                                maxWidth: '400px',
+                                width: '100%',
+                                textAlign: 'center',
+                                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+                            }}
+                        >
+                            <div style={{
+                                width: '80px',
+                                height: '80px',
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #EF4444 0%, #F87171 100%)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto 24px',
+                                color: 'white',
+                            }}>
+                                <Award size={40} />
+                            </div>
+
+                            <h2 style={{ fontSize: '28px', fontWeight: '800', color: '#111827', margin: '0 0 8px 0' }}>
+                                Module Complete!
+                            </h2>
+                            <p style={{ color: '#6B7280', margin: '0 0 32px 0' }}>
+                                You've finished the Grammar practice session.
+                            </p>
+
+                            <div style={{
+                                marginBottom: '32px',
+                                padding: '20px',
+                                backgroundColor: '#F8FAFC',
+                                borderRadius: '16px',
+                            }}>
+                                <p style={{ fontSize: '14px', color: '#64748B', margin: '0 0 4px 0' }}>Final accuracy</p>
+                                <p style={{ fontSize: '36px', fontWeight: '800', color: '#EF4444', margin: 0 }}>
+                                    {scorePercent}%
+                                </p>
+                            </div>
+
+                            <div style={{ display: 'grid', gap: '12px' }}>
+                                <button
+                                    onClick={() => {
+                                        setShowPopup(false);
+                                        handleRestart();
+                                    }}
+                                    style={{
+                                        padding: '14px',
+                                        borderRadius: '12px',
+                                        border: '2px solid #E2E8F0',
+                                        background: 'white',
+                                        color: '#475569',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    Retest
+                                </button>
+                                <button
+                                    onClick={() => window.location.href = '/dashboard'}
+                                    style={{
+                                        padding: '14px',
+                                        borderRadius: '12px',
+                                        border: 'none',
+                                        background: '#F1F5F9',
+                                        color: '#475569',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    Next Module
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
