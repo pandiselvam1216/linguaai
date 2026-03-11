@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, MicOff, Clock, Send, RotateCcw, CheckCircle, AlertCircle, Volume2 } from 'lucide-react'
+import { Mic, Square, Play, Send, Clock, CheckCircle, ChevronRight, XCircle, RotateCcw, AlertCircle, Info, MicOff, Volume2 } from 'lucide-react'
+import api from '../../services/api'
 import { evaluateSpeaking } from '../../utils/localScoring'
 import { getModuleQuestions } from '../../services/questionService'
-import Modal from '../../components/common/Modal'
+import { saveModuleScore } from '../../utils/localScoring'
+import ModuleRulesModal from '../../components/common/ModuleRulesModal'
 
 export default function Speaking() {
     const [prompts, setPrompts] = useState([])
@@ -11,8 +13,11 @@ export default function Speaking() {
     const [loading, setLoading] = useState(true)
     const [isRecording, setIsRecording] = useState(false)
     const [transcript, setTranscript] = useState('')
+    const [timeElapsed, setTimeElapsed] = useState(0)
     const [timeLeft, setTimeLeft] = useState(60)
     const [feedback, setFeedback] = useState(null)
+    const [showPopup, setShowPopup] = useState(false);
+    const [showRules, setShowRules] = useState(false);
     const [submitting, setSubmitting] = useState(false)
     const recognitionRef = useRef(null)
     const timerRef = useRef(null)
@@ -21,7 +26,6 @@ export default function Speaking() {
         const saved = localStorage.getItem('neuraLingua_completed_speaking');
         return saved ? JSON.parse(saved) : [];
     });
-    const [showPopup, setShowPopup] = useState(false);
 
     const showAlert = (title, message, theme = 'info') => {
         setAlertConfig({ isOpen: true, title, message, theme, type: 'alert' })
@@ -123,6 +127,14 @@ export default function Speaking() {
         setFeedback(null)
         setTimeLeft(selectedPrompt?.time_limit || 60)
     }
+
+    const speakingRules = [
+        "Select a speaking prompt from the list to begin.",
+        "When ready, click 'Start Recording' and speak clearly into your microphone.",
+        "You have a time limit for each prompt. Try to speak for the entire duration.",
+        "Once you finish (or time runs out), click 'Get Feedback'.",
+        "Our AI will evaluate your fluency, vocabulary, and grammar based on your audio."
+    ];
 
     const handleSubmit = async () => {
         if (!transcript.trim()) return
@@ -238,6 +250,30 @@ export default function Speaking() {
                         Improve your pronunciation and fluency with AI feedback
                     </p>
                 </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
+                {/* Instructions Button */}
+                <button
+                    onClick={() => setShowRules(true)}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '10px 16px',
+                        backgroundColor: 'white',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '10px',
+                        color: '#4B5563',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                    }}
+                >
+                    <Info size={16} />
+                    Instructions
+                </button>
             </div>
 
             <div className="grid-sidebar">
@@ -732,6 +768,14 @@ export default function Speaking() {
                     </div>
                 )}
             </AnimatePresence>
+
+            <ModuleRulesModal 
+                isOpen={showRules}
+                onClose={() => setShowRules(false)}
+                title="Speaking Rules"
+                description="Follow these guidelines to improve your speaking skills:"
+                rules={speakingRules}
+            />
         </div>
     )
 }

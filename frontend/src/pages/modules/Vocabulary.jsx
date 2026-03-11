@@ -4,10 +4,11 @@ import {
     Search, BookmarkPlus, Volume2, Trash2, Book,
     Sparkles, ArrowRight, BookmarkCheck, X, Dumbbell,
     ChevronRight, ChevronLeft, Check, RotateCcw, Trophy,
-    Zap, PenLine, Brain, CheckCircle
+    Zap, PenLine, Brain, CheckCircle, Info
 } from 'lucide-react'
 import api from '../../services/api'
 import { saveModuleScore } from '../../utils/localScoring'
+import ModuleRulesModal from '../../components/common/ModuleRulesModal'
 
 // ─── Utility ────────────────────────────────────────────────────────────────
 function shuffle(arr) {
@@ -643,6 +644,7 @@ export default function Vocabulary() {
         const saved = localStorage.getItem('neuraLingua_completed_vocab_modes');
         return saved ? JSON.parse(saved) : [];
     });
+    const [showRules, setShowRules] = useState(false);
 
     useEffect(() => {
         localStorage.setItem('neuraLingua_completed_vocab_modes', JSON.stringify(completedModes));
@@ -795,6 +797,13 @@ export default function Vocabulary() {
 
     const isWordSaved = (word) => savedWords.some(w => w.word.toLowerCase() === word.toLowerCase())
 
+    const vocabRules = [
+        "Use the 'Search' tab to find new words and save them to your list.",
+        "You need at least 4 saved words to unlock the Trainer modes.",
+        "Trainer modes include Flashcards, Multiple Choice, and Fill-in-the-Blank.",
+        "Practice regularly to master your vocabulary list and boost your score!"
+    ];
+
     const tabs = [
         { key: 'search', icon: <Search size={15} />, label: 'Search' },
         { key: 'saved', icon: <BookmarkCheck size={15} />, label: `Saved (${savedWords.length})` },
@@ -817,14 +826,36 @@ export default function Vocabulary() {
                             <Book size={24} style={{ color: 'white' }} />
                         </div>
                         <div>
-                            <h1 style={{ fontWeight: '700', color: '#111827', margin: 0 }}>
-                                Vocabulary Builder
+                            <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>
+                                Vocabulary
                             </h1>
-                            <p style={{ color: '#6B7280', margin: 0 }}>
-                                Learn and master new words with ease
+                            <p style={{ fontSize: '15px', color: '#6B7280', margin: 0, marginTop: '2px' }}>
+                                Discover, save, and train new words
                             </p>
                         </div>
                     </div>
+
+                    {/* Instructions Button */}
+                    <button
+                        onClick={() => setShowRules(true)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '10px 16px',
+                            backgroundColor: 'white',
+                            border: '1px solid #E5E7EB',
+                            borderRadius: '10px',
+                            color: '#4B5563',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                        }}
+                    >
+                        <Info size={16} />
+                        Instructions
+                    </button>
                 </div>
 
                 {/* Tabs & Search Bar */}
@@ -1081,6 +1112,14 @@ export default function Vocabulary() {
                     )}
                 </AnimatePresence>
             </motion.div>
+
+            <ModuleRulesModal 
+                isOpen={showRules}
+                onClose={() => setShowRules(false)}
+                title="Vocabulary Rules"
+                description="Follow these guidelines to expand your vocabulary:"
+                rules={vocabRules}
+            />
         </div>
     )
 }

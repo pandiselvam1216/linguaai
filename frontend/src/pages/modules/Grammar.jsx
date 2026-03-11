@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CheckSquare, Star, ChevronRight, Award, RefreshCw, Check, X } from 'lucide-react'
+import { Star, CheckCircle, Info, CheckSquare } from 'lucide-react'
 import { getModuleQuestions } from '../../services/questionService'
 import { saveModuleScore } from '../../utils/localScoring'
+import ModuleRulesModal from '../../components/common/ModuleRulesModal'
 
 export default function Grammar() {
     const [questions, setQuestions] = useState([])
@@ -12,8 +13,9 @@ export default function Grammar() {
     const [isCorrect, setIsCorrect] = useState(false)
     const [score, setScore] = useState({ correct: 0, total: 0 })
     const [loading, setLoading] = useState(true)
-    const [showExplanation, setShowExplanation] = useState(false)
+    const [showExplanation, setShowExplanation] = useState(false);
     const [showPopup, setShowPopup] = useState(false);
+    const [showRules, setShowRules] = useState(false);
     const [completedQuestions, setCompletedQuestions] = useState(() => {
         const saved = localStorage.getItem('neuraLingua_completed_grammar');
         return saved ? JSON.parse(saved) : [];
@@ -95,6 +97,14 @@ export default function Grammar() {
         setShowResult(false)
         setShowExplanation(false)
     }
+
+    const grammarRules = [
+        "Read each sentence carefully and identify the grammatical error or the best completion.",
+        "Select the single best answer from the options provided.",
+        "You can retry an exercise at any time during the session, but your first attempt defines your score.",
+        "Your score will be saved automatically once you complete all exercises in the session.",
+        "Pay special attention to verb tense, subject-verb agreement, and proper preposition usage."
+    ];
 
     if (loading) {
         return (
@@ -183,7 +193,30 @@ export default function Grammar() {
                     </div>
                 </div>
 
-                {/* Score Badge */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    {/* Instructions Button */}
+                    <button
+                        onClick={() => setShowRules(true)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '10px 16px',
+                            backgroundColor: 'white',
+                            border: '1px solid #E5E7EB',
+                            borderRadius: '10px',
+                            color: '#4B5563',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                        }}
+                    >
+                        <Info size={16} />
+                        Instructions
+                    </button>
+
+                    {/* Score Badge */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -205,6 +238,7 @@ export default function Grammar() {
                     }}>
                         {scorePercent}%
                     </span>
+                </div>
                 </div>
             </div>
 
@@ -531,6 +565,14 @@ export default function Grammar() {
                     </motion.div>
                 )}
             </AnimatePresence>
+            
+            <ModuleRulesModal 
+                isOpen={showRules}
+                onClose={() => setShowRules(false)}
+                title="Grammar Rules"
+                description="Follow these guidelines to master your grammar exercises:"
+                rules={grammarRules}
+            />
         </div>
     )
 }

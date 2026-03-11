@@ -1,9 +1,18 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { PenTool, Clock, Send, FileText, CheckCircle, AlertCircle, Sparkles, RotateCcw } from 'lucide-react'
-import { evaluateWriting } from '../../utils/localScoring'
-import { getAIWritingFeedback } from '../../services/aiService'
+import { PenTool, Send, Clock, CheckCircle, ChevronRight, XCircle, Award, RotateCcw, AlertCircle, Info } from 'lucide-react'
+import api from '../../services/api'
 import { getModuleQuestions } from '../../services/questionService'
+import { saveModuleScore } from '../../utils/localScoring'
+import ModuleRulesModal from '../../components/common/ModuleRulesModal'
+
+const writingRules = [
+    "**Choose a Prompt:** Select a writing prompt from the list to begin.",
+    "**Write Your Essay:** Type your essay in the provided text area. Aim to meet the word count requirement.",
+    "**Submit for Feedback:** Once you're done, click 'Submit' to receive instant feedback on your grammar, spelling, and style.",
+    "**Review AI Feedback:** An AI will also provide additional insights and suggestions to improve your writing.",
+    "**Practice Regularly:** The more you write and review feedback, the better your writing skills will become!"
+];
 
 export default function Writing() {
     const [prompts, setPrompts] = useState([])
@@ -14,6 +23,7 @@ export default function Writing() {
     const [submitting, setSubmitting] = useState(false)
     const [timeElapsed, setTimeElapsed] = useState(0)
     const [showPopup, setShowPopup] = useState(false);
+    const [showRules, setShowRules] = useState(false);
     const [completedTopics, setCompletedTopics] = useState(() => {
         const saved = localStorage.getItem('neuraLingua_completed_writing');
         return saved ? JSON.parse(saved) : [];
@@ -184,7 +194,30 @@ export default function Writing() {
                     </div>
                 </div>
 
-                {/* Timer */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    {/* Instructions Button */}
+                    <button
+                        onClick={() => setShowRules(true)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '10px 16px',
+                            backgroundColor: 'white',
+                            border: '1px solid #E5E7EB',
+                            borderRadius: '10px',
+                            color: '#4B5563',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                        }}
+                    >
+                        <Info size={16} />
+                        Instructions
+                    </button>
+
+                    {/* Timer */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -203,6 +236,7 @@ export default function Writing() {
                     }}>
                         {formatTime(timeElapsed)}
                     </span>
+                </div>
                 </div>
             </div>
 
@@ -742,6 +776,14 @@ export default function Writing() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <ModuleRulesModal 
+                isOpen={showRules}
+                onClose={() => setShowRules(false)}
+                title="Writing Rules"
+                description="Follow these guidelines to improve your writing skills:"
+                rules={writingRules}
+            />
         </div>
     )
 }

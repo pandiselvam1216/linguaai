@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BookOpen, Clock, Send, CheckCircle, XCircle, ChevronRight, FileText, Upload, X } from 'lucide-react'
+import { BookOpen, Clock, Send, CheckCircle, XCircle, ChevronRight, FileText, Upload, X, Award, RotateCcw, Search, Info } from 'lucide-react'
 import api from '../../services/api'
 import { getModuleQuestions } from '../../services/questionService'
 import { saveModuleScore } from '../../utils/localScoring'
+import ModuleRulesModal from '../../components/common/ModuleRulesModal'
 
 export default function Reading() {
     const [passages, setPassages] = useState([])
@@ -14,6 +15,7 @@ export default function Reading() {
     const [loading, setLoading] = useState(true)
     const [timeLeft, setTimeLeft] = useState(600)
     const [showPopup, setShowPopup] = useState(false);
+    const [showRules, setShowRules] = useState(false);
     const [completedPassages, setCompletedPassages] = useState(() => {
         const saved = localStorage.getItem('neuraLingua_completed_reading');
         return saved ? JSON.parse(saved) : [];
@@ -151,6 +153,14 @@ export default function Reading() {
         setTimeLeft(600)
     }
 
+    const readingRules = [
+        "Read the passage carefully before attempting the questions.",
+        "You have a time limit (default 10 minutes) for each passage.",
+        "Select the best answer for each multiple-choice question.",
+        "Your score is based on the number of correct answers.",
+        "You can refer back to the passage at any time while answering."
+    ];
+
     if (loading) {
         return (
             <div style={{
@@ -232,7 +242,30 @@ export default function Reading() {
                     </div>
                 </div>
 
-                {/* Timer Badge */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    {/* Instructions Button */}
+                    <button
+                        onClick={() => setShowRules(true)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '10px 16px',
+                            backgroundColor: 'white',
+                            border: '1px solid #E5E7EB',
+                            borderRadius: '10px',
+                            color: '#4B5563',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                        }}
+                    >
+                        <Info size={16} />
+                        Instructions
+                    </button>
+
+                    {/* Timer Badge */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -246,6 +279,7 @@ export default function Reading() {
                     <span style={{ fontSize: '14px', fontWeight: '600', color: '#111827', fontVariantNumeric: 'tabular-nums' }}>
                         {formatTime(timeLeft)}
                     </span>
+                </div>
                 </div>
             </div>
 
@@ -740,6 +774,14 @@ export default function Reading() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+                <ModuleRulesModal 
+                    isOpen={showRules}
+                    onClose={() => setShowRules(false)}
+                    title="Reading Rules"
+                    description="Follow these guidelines to improve your reading comprehension:"
+                    rules={readingRules}
+                />
             </div>
         </div>
     )

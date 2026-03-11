@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Headphones, Play, Pause, Volume2, VolumeX, Check, X, ChevronRight, Award } from 'lucide-react'
+import { Headphones, Play, Pause, Volume2, VolumeX, Check, X, ChevronRight, Award, Info } from 'lucide-react'
 import { getModuleQuestions } from '../../services/questionService'
 import { saveModuleScore } from '../../utils/localScoring'
+import ModuleRulesModal from '../../components/common/ModuleRulesModal'
 
 export default function Listening() {
     const [questions, setQuestions] = useState([])
@@ -22,6 +23,7 @@ export default function Listening() {
         return saved ? JSON.parse(saved) : [];
     });
     const [showPopup, setShowPopup] = useState(false);
+    const [showRules, setShowRules] = useState(false);
 
     useEffect(() => {
         localStorage.setItem('neuraLingua_completed_listening', JSON.stringify(completedQuestions));
@@ -86,6 +88,14 @@ export default function Listening() {
         setIsPlaying(false)
         setProgress(100)
     }
+
+    const listeningRules = [
+        "Listen to the audio clip carefully by clicking the Play button.",
+        "You can pause or replay the audio as many times as you need.",
+        "Read the question and select the best answer based on what you heard.",
+        "Your score will be logged at the end of the session.",
+        "Make sure your device volume is turned up!"
+    ];
 
     const handleSelectAnswer = (value) => {
         if (showResult) return
@@ -219,7 +229,30 @@ export default function Listening() {
                     </div>
                 </div>
 
-                {/* Score */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    {/* Instructions Button */}
+                    <button
+                        onClick={() => setShowRules(true)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '10px 16px',
+                            backgroundColor: 'white',
+                            border: '1px solid #E5E7EB',
+                            borderRadius: '10px',
+                            color: '#4B5563',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                        }}
+                    >
+                        <Info size={16} />
+                        Instructions
+                    </button>
+
+                    {/* Score */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -236,6 +269,7 @@ export default function Listening() {
                         </p>
                         <p style={{ fontSize: '12px', color: '#6B7280', margin: 0 }}>Correct</p>
                     </div>
+                </div>
                 </div>
             </div>
 
@@ -721,6 +755,14 @@ export default function Listening() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <ModuleRulesModal 
+                isOpen={showRules}
+                onClose={() => setShowRules(false)}
+                title="Listening Rules"
+                description="Follow these guidelines to improve your listening skills:"
+                rules={listeningRules}
+            />
         </div>
     )
 }
