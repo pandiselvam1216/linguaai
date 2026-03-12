@@ -4,7 +4,7 @@ User and Role models
 
 from app import db
 from datetime import datetime
-import bcrypt
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 class Role(db.Model):
@@ -69,12 +69,11 @@ class User(db.Model):
     
     def set_password(self, password):
         """Hash and set password"""
-        salt = bcrypt.gensalt()
-        self.password_hash = bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+        self.password_hash = generate_password_hash(password)
     
     def check_password(self, password):
         """Verify password"""
-        return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
+        return check_password_hash(self.password_hash, password)
     
     def to_dict(self, include_sensitive=False):
         data = {

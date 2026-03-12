@@ -5,7 +5,6 @@ import {
     Headphones, Mic, FileText, PenTool, CheckSquare, Upload, FileUp, Eye
 } from 'lucide-react'
 import api from '../../services/api'
-import { supabase } from '../../utils/supabaseClient'
 import Modal from '../../components/common/Modal'
 
 const moduleIcons = {
@@ -49,6 +48,7 @@ export default function QuestionManagement() {
         correct_answer: 'A',
         explanation: '',
         audio_data: null,  // base64 data URL for listening audio
+        audio_link: '',    // external URL for listening audio
         pdf_name: null,    // uploaded PDF filename
     })
     const [pdfLoading, setPdfLoading] = useState(false)
@@ -72,34 +72,32 @@ export default function QuestionManagement() {
     const fetchQuestions = async () => {
         setLoading(true)
         try {
-            const { data: sbData, error } = await supabase
-                .from('questions')
-                .select('*')
-                .eq('module', activeModule)
-                .order('created_at', { ascending: false })
-
-            if (!error) {
-                // Supabase table exists — use it
-                setUsingLocalStorage(false)
-                const normalized = (sbData || []).map(item => ({
-                    id: item.id,
-                    content: item.content,
-                    difficulty: item.difficulty || 1,
-                    options: item.options,
-                    correct_answer: item.correct_answer,
-                    explanation: item.explanation,
-                    type: ['speaking', 'writing'].includes(activeModule) ? 'prompt' : 'mcq'
-                }))
-                setQuestions(normalized)
-                setLoading(false)
-                return
-            }
-        } catch (_) { /* ignore */ }
-
-        // Supabase table missing — use localStorage
-        setUsingLocalStorage(true)
-        setQuestions(getLocalQuestions())
-        setLoading(false)
+            const response = await api.get(`/admin/questions?module=${activeModule}`)
+            const data = response.data.questions || []
+            
+            const normalized = data.map(item => ({
+                id: item.id,
+                title: item.title || '',
+                content: item.content || item.passage_text || '',
+                difficulty: item.difficulty || 1,
+                options: item.options,
+                correct_answer: item.correct_answer,
+                explanation: item.explanation,
+                audio_link: item.media_url || item.audio_link || '',
+                pdf_name: item.pdf_name || null,
+                type: ['speaking', 'writing', 'critical-thinking', 'vocabulary'].includes(activeModule) ? 'prompt' : 'mcq'
+            }))
+            
+            setQuestions(normalized)
+            setUsingLocalStorage(false)
+        } catch (error) {
+            console.error('Failed to fetch questions:', error)
+            setUsingLocalStorage(true)
+            setQuestions(getLocalQuestions())
+            showAlert('API Error', 'Failed to fetch questions from the server.', 'danger')
+        } finally {
+            setLoading(false)
+        }
     }
 
     const handleOpenModal = (question = null) => {
@@ -113,6 +111,7 @@ export default function QuestionManagement() {
                 correct_answer: question.correct_answer,
                 explanation: question.explanation || '',
                 audio_data: question.audio_data || null,
+                audio_link: question.audio_link || '',
                 pdf_name: question.pdf_name || null,
             })
         } else {
@@ -125,6 +124,7 @@ export default function QuestionManagement() {
                 correct_answer: 'A',
                 explanation: '',
                 audio_data: null,
+                audio_link: '',
                 pdf_name: null,
             })
         }
@@ -210,74 +210,43 @@ export default function QuestionManagement() {
         setSaveError('')
         setSaveSuccess(false)
 
-        const basePayload = {
+        const payload = {
             module: activeModule,
+            title: formData.title || null,
             content: formData.content,
             difficulty: formData.difficulty,
             options: ['grammar', 'listening', 'reading'].includes(activeModule) ? formData.options : null,
             correct_answer: ['grammar', 'listening', 'reading'].includes(activeModule) ? formData.correct_answer : null,
             explanation: formData.explanation || null,
-            audio_data: activeModule === 'listening' ? (formData.audio_data || null) : null,
+            audio_link: activeModule === 'listening' ? (formData.audio_link?.trim() || null) : null,
+            passage_text: activeModule === 'reading' ? formData.content : null,
+            is_active: true,
+            type: ['speaking', 'writing', 'critical-thinking', 'vocabulary'].includes(activeModule) ? 'prompt' : 'mcq'
         }
 
-        // Extended fields (may not exist in older table schemas)
-        const extendedPayload = {
-            ...basePayload,
-            title: formData.title || null,
-            pdf_name: activeModule === 'reading' ? (formData.pdf_name || null) : null,
-        }
-
-        // Try Supabase (always, even if previously fell back)
-        let savedToSupabase = false
-        let supabaseData = null
-
-        for (const payload of [extendedPayload, basePayload]) {
-            try {
-                if (editingQuestion) {
-                    const { error } = await supabase.from('questions').update(payload).eq('id', editingQuestion.id)
-                    if (error) throw error
-                    setQuestions(prev => prev.map(q => q.id === editingQuestion.id ? { ...q, ...payload } : q))
-                } else {
-                    const { data, error } = await supabase.from('questions').insert(payload).select().single()
-                    if (error) throw error
-                    supabaseData = data
-                    setQuestions(prev => [{ ...data, type: payload.options ? 'mcq' : 'prompt' }, ...prev])
-                }
-                savedToSupabase = true
-                setUsingLocalStorage(false)
-                break   // success — stop retrying
-            } catch (err) {
-                // If first attempt (extended) fails with column error, retry with base
-                const isColumnError = err?.message?.includes('column') || err?.code === '42703' || err?.code === 'PGRST204'
-                if (payload === extendedPayload && isColumnError) continue
-                // For any other error on base payload, stop and fall through to localStorage
-                console.warn('Supabase save failed:', err)
-                break
+        try {
+            let response
+            if (editingQuestion) {
+                // Update existing question
+                response = await api.put(`/admin/questions/${editingQuestion.id}`, payload)
+                const updated = response.data.question
+                setQuestions(prev => prev.map(q => q.id === updated.id ? updated : q))
+            } else {
+                // Create new question
+                response = await api.post(`/admin/questions`, payload)
+                const created = response.data.question
+                setQuestions(prev => [created, ...prev])
             }
-        }
-
-        if (savedToSupabase) {
+            
             setSaveSuccess(true)
             setTimeout(() => setSaveSuccess(false), 3000)
             handleCloseModal()
-        } else {
-            // localStorage fallback
-            const current = getLocalQuestions()
-            if (editingQuestion) {
-                const updated = current.map(q => q.id === editingQuestion.id ? { ...q, ...extendedPayload } : q)
-                saveLocalQuestions(updated)
-                setQuestions(updated)
-            } else {
-                const newQ = { ...extendedPayload, id: Date.now().toString(), created_at: new Date().toISOString(), type: extendedPayload.options ? 'mcq' : 'prompt' }
-                const updated = [newQ, ...current]
-                saveLocalQuestions(updated)
-                setQuestions(updated)
-            }
-            setUsingLocalStorage(true)
-            handleCloseModal()
+        } catch (error) {
+            console.error('Failed to save question:', error)
+            setSaveError(error.response?.data?.error || 'Failed to save question')
+        } finally {
+            setSaving(false)
         }
-
-        setSaving(false)
     }
 
     const handleDelete = (questionId) => {
@@ -291,14 +260,13 @@ export default function QuestionManagement() {
             onConfirm: async () => {
                 setAlertConfig({ isOpen: false })
                 try {
-                    if (!usingLocalStorage) {
-                        const { error } = await supabase.from('questions').delete().eq('id', questionId)
-                        if (error) throw error
-                    }
-                } catch (_) { /* ignore Supabase errors, still remove locally */ }
+                    await api.delete(`/admin/questions/${questionId}`)
+                } catch (error) {
+                    console.error('Failed to delete from server:', error)
+                    // Still remove from local state
+                }
                 const updated = questions.filter(q => q.id !== questionId)
                 setQuestions(updated)
-                if (usingLocalStorage) saveLocalQuestions(updated)
             }
         })
     }
@@ -819,49 +787,95 @@ export default function QuestionManagement() {
 
                                 {/* Audio Upload — Listening only */}
                                 {activeModule === 'listening' && (
-                                    <div style={{ marginBottom: '20px' }}>
-                                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
-                                            Audio File
-                                        </label>
-                                        <input
-                                            type="file"
-                                            accept="audio/*"
-                                            onChange={handleAudioUpload}
-                                            style={{
-                                                width: '100%',
-                                                padding: '10px 14px',
-                                                borderRadius: '10px',
-                                                border: '2px dashed #E5E7EB',
-                                                fontSize: '14px',
-                                                backgroundColor: '#F9FAFB',
-                                                cursor: 'pointer',
-                                            }}
-                                        />
-                                        {formData.audio_data && (
-                                            <div style={{ marginTop: '10px' }}>
-                                                <audio
-                                                    controls
-                                                    src={formData.audio_data}
-                                                    style={{ width: '100%', borderRadius: '8px' }}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setFormData(p => ({ ...p, audio_data: null }))}
-                                                    style={{
-                                                        marginTop: '6px',
-                                                        fontSize: '12px',
-                                                        color: '#EF4444',
-                                                        background: 'none',
-                                                        border: 'none',
-                                                        cursor: 'pointer',
-                                                        padding: 0,
-                                                    }}
-                                                >
-                                                    ✕ Remove audio
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
+                                    <>
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
+                                                Audio File
+                                            </label>
+                                            <input
+                                                type="file"
+                                                accept="audio/*"
+                                                onChange={handleAudioUpload}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '10px 14px',
+                                                    borderRadius: '10px',
+                                                    border: '2px dashed #E5E7EB',
+                                                    fontSize: '14px',
+                                                    backgroundColor: '#F9FAFB',
+                                                    cursor: 'pointer',
+                                                }}
+                                            />
+                                            {formData.audio_data && (
+                                                <div style={{ marginTop: '10px' }}>
+                                                    <audio
+                                                        controls
+                                                        src={formData.audio_data}
+                                                        style={{ width: '100%', borderRadius: '8px' }}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData(p => ({ ...p, audio_data: null }))}
+                                                        style={{
+                                                            marginTop: '6px',
+                                                            fontSize: '12px',
+                                                            color: '#EF4444',
+                                                            background: 'none',
+                                                            border: 'none',
+                                                            cursor: 'pointer',
+                                                            padding: 0,
+                                                        }}
+                                                    >
+                                                        ✕ Remove audio
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
+                                                Or Audio Link (URL)
+                                            </label>
+                                            <input
+                                                type="url"
+                                                value={formData.audio_link}
+                                                onChange={(e) => setFormData(p => ({ ...p, audio_link: e.target.value }))}
+                                                placeholder="https://example.com/audio.mp3"
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '10px 14px',
+                                                    borderRadius: '10px',
+                                                    border: '2px solid #E5E7EB',
+                                                    fontSize: '14px',
+                                                    backgroundColor: 'white',
+                                                }}
+                                            />
+                                            {formData.audio_link && (
+                                                <div style={{ marginTop: '10px' }}>
+                                                    <audio
+                                                        controls
+                                                        src={formData.audio_link}
+                                                        style={{ width: '100%', borderRadius: '8px' }}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData(p => ({ ...p, audio_link: '' }))}
+                                                        style={{
+                                                            marginTop: '6px',
+                                                            fontSize: '12px',
+                                                            color: '#EF4444',
+                                                            background: 'none',
+                                                            border: 'none',
+                                                            cursor: 'pointer',
+                                                            padding: 0,
+                                                        }}
+                                                    >
+                                                        ✕ Remove URL
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
                                 )}
 
                                 {['grammar', 'listening', 'reading'].includes(activeModule) && (

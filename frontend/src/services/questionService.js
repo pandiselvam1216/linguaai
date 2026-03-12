@@ -20,7 +20,7 @@ export async function getModuleQuestions(module) {
         explanation: item.explanation || null,
         time_limit: item.time_limit || 60,
         word_limit: item.word_limit || 150,
-        audio_data: item.audio_data || item.media_url || null,
+        audio_data: item.audio_data || item.audio_link || item.media_url || null,
     }));
 
     // Function to fetch fresh data from Local Flask API and update cache

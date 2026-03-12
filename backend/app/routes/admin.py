@@ -7,7 +7,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User, Role
 from app.models.attempt import Attempt, Score
-from app.models.module import Module
+from app.models.module import Module, Question
 from app.utils.decorators import role_required
 from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
@@ -311,3 +311,129 @@ def get_activity():
             })
     
     return jsonify({'activities': activities}), 200
+
+
+# ==================== QUESTION MANAGEMENT ====================
+
+@admin_bp.route('/questions', methods=['GET'])
+@jwt_required()
+@role_required('admin')
+def get_questions():
+    """Get questions for a specific module"""
+    module_slug = request.args.get('module')
+    if not module_slug:
+        return jsonify({'error': 'Module slug is required'}), 400
+    
+    module = Module.query.filter_by(slug=module_slug).first()
+    if not module:
+        return jsonify({'error': 'Module not found'}), 404
+    
+    questions = Question.query.filter_by(module_id=module.id).all()
+    
+    return jsonify({
+        'questions': [q.to_dict(include_answer=True) for q in questions],
+        'total': len(questions)
+    }), 200
+
+
+@admin_bp.route('/questions', methods=['POST'])
+@jwt_required()
+@role_required('admin')
+def create_question():
+    """Create a new question"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    module_slug = data.get('module')
+    if not module_slug:
+        return jsonify({'error': 'Module slug is required'}), 400
+        
+    module = Module.query.filter_by(slug=module_slug).first()
+    if not module:
+        return jsonify({'error': 'Module not found'}), 404
+
+    try:
+        question = Question(
+            module_id=module.id,
+            type=data.get('type', 'mcq'),
+            title=data.get('title'),
+            content=data.get('content', ''),
+            options=data.get('options'),
+            correct_answer=data.get('correct_answer'),
+            explanation=data.get('explanation'),
+            difficulty=data.get('difficulty', 1),
+            points=data.get('points', 10),
+            media_url=data.get('audio_link') or data.get('media_url'),
+            passage_text=data.get('passage_text'),
+            is_active=data.get('is_active', True)
+        )
+        
+        db.session.add(question)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Question created successfully',
+            'question': question.to_dict(include_answer=True)
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@admin_bp.route('/questions/<int:question_id>', methods=['PUT'])
+@jwt_required()
+@role_required('admin')
+def update_question(question_id):
+    """Update an existing question"""
+    question = db.session.get(Question, question_id)
+    if not question:
+        return jsonify({'error': 'Question not found'}), 404
+        
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    try:
+        if 'type' in data: question.type = data['type']
+        if 'title' in data: question.title = data['title']
+        if 'content' in data: question.content = data['content']
+        if 'options' in data: question.options = data['options']
+        if 'correct_answer' in data: question.correct_answer = data['correct_answer']
+        if 'explanation' in data: question.explanation = data['explanation']
+        if 'difficulty' in data: question.difficulty = data['difficulty']
+        if 'points' in data: question.points = data['points']
+        if 'audio_link' in data or 'media_url' in data:
+            question.media_url = data.get('audio_link') or data.get('media_url')
+        if 'passage_text' in data: question.passage_text = data['passage_text']
+        if 'is_active' in data: question.is_active = data['is_active']
+        
+        question.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Question updated successfully',
+            'question': question.to_dict(include_answer=True)
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@admin_bp.route('/questions/<int:question_id>', methods=['DELETE'])
+@jwt_required()
+@role_required('admin')
+def delete_question(question_id):
+    """Delete a question"""
+    question = db.session.get(Question, question_id)
+    if not question:
+        return jsonify({'error': 'Question not found'}), 404
+    
+    try:
+        db.session.delete(question)
+        db.session.commit()
+        
+        return jsonify({'message': 'Question deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
