@@ -50,7 +50,7 @@ export default function Grammar() {
     const handleCheckAnswer = async () => {
         if (!selectedAnswer) return
 
-        const correct = selectedAnswer === currentQuestion.correct_answer
+        const correct = String(selectedAnswer).trim().toLowerCase() === String(currentQuestion.correct_answer).trim().toLowerCase()
         setIsCorrect(correct)
         setShowResult(true)
         setShowExplanation(true)
@@ -68,7 +68,7 @@ export default function Grammar() {
 
             return newScore;
         })
-        if (!completedQuestions.includes(currentIndex)) {
+        if (correct && !completedQuestions.includes(currentIndex)) {
             setCompletedQuestions(prev => [...prev, currentIndex])
         }
     }
@@ -79,6 +79,7 @@ export default function Grammar() {
             setSelectedAnswer(null)
             setShowResult(false)
             setShowExplanation(false)
+            setIsCorrect(false)
         }
     }
 
@@ -87,7 +88,9 @@ export default function Grammar() {
         setSelectedAnswer(null)
         setShowResult(false)
         setShowExplanation(false)
+        setIsCorrect(false)
         setScore({ correct: 0, total: 0 })
+        setCompletedQuestions([])
     }
 
     const handleSelectExercise = (index) => {
@@ -96,6 +99,7 @@ export default function Grammar() {
         setSelectedAnswer(null)
         setShowResult(false)
         setShowExplanation(false)
+        setIsCorrect(false)
     }
 
     const grammarRules = [
@@ -296,7 +300,7 @@ export default function Grammar() {
                                             Exercise {idx + 1}
                                         </p>
                                     </div>
-                                    {idx < currentIndex && (
+                                    {completedQuestions.includes(idx) && (
                                         <CheckCircle size={14} style={{ color: '#22C55E' }} />
                                     )}
                                 </div>

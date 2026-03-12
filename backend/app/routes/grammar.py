@@ -33,7 +33,7 @@ def get_questions():
     questions = query.limit(limit).all()
     
     return jsonify({
-        'questions': [q.to_dict() for q in questions],
+        'questions': [q.to_dict(include_answer=True) for q in questions],
         'total': len(questions)
     }), 200
 
@@ -47,7 +47,7 @@ def get_question(question_id):
     if not question:
         return jsonify({'error': 'Question not found'}), 404
     
-    return jsonify({'question': question.to_dict()}), 200
+    return jsonify({'question': question.to_dict(include_answer=True)}), 200
 
 
 @grammar_bp.route('/submit', methods=['POST'])

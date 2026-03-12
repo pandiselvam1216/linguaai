@@ -1,18 +1,18 @@
-import { supabase } from '../utils/supabaseClient'
+import api from './api'
 
 /**
  * Fetch questions for a given module using a Cache-First strategy.
- * Returns local data immediately if available, and updates the cache from Supabase in the background.
+ * Returns local data immediately if available, and updates the cache from the Flask API in the background.
  * @param {string} module - 'grammar' | 'listening' | 'reading' | 'writing' | 'speaking'
  * @returns {Promise<Array>} array of question objects
  */
 export async function getModuleQuestions(module) {
     const cacheKey = `neuralingua_questions_${module}`;
     
-    // Helper to format Supabase data consistently
+    // Helper to format API data consistently
     const formatData = (items) => items.map(item => ({
         id: item.id,
-        content: item.content,
+        content: item.content || item.passage_text || '',
         title: item.title || item.content?.substring(0, 60) || 'Untitled',
         difficulty: item.difficulty || 1,
         options: item.options || null,
@@ -20,25 +20,23 @@ export async function getModuleQuestions(module) {
         explanation: item.explanation || null,
         time_limit: item.time_limit || 60,
         word_limit: item.word_limit || 150,
-        audio_data: item.audio_data || null,
+        audio_data: item.audio_data || item.media_url || null,
     }));
 
-    // Function to fetch fresh data from Supabase and update cache
-    const fetchFromSupabase = async () => {
+    // Function to fetch fresh data from Local Flask API and update cache
+    const fetchFromAPI = async () => {
         try {
-            const { data, error } = await supabase
-                .from('questions')
-                .select('*')
-                .eq('module', module)
-                .order('created_at', { ascending: false });
+            // Using the local API instance configured in api.js
+            const response = await api.get(`/${module}/questions`);
+            const data = response.data.questions;
 
-            if (!error && data && data.length > 0) {
+            if (data && data.length > 0) {
                 const formatted = formatData(data);
                 localStorage.setItem(cacheKey, JSON.stringify(formatted));
                 return formatted;
             }
-        } catch (_) {
-            // Silently fail background fetch
+        } catch (error) {
+            console.error(`Failed to fetch ${module} questions from local API:`, error);
         }
         return null;
     };
@@ -50,7 +48,7 @@ export async function getModuleQuestions(module) {
             const list = JSON.parse(raw);
             if (list && list.length > 0) {
                 // Kick off background refresh without awaiting
-                fetchFromSupabase();
+                fetchFromAPI();
                 // Return cached data immediately for instant UI render
                 return formatData(list);
             }
@@ -59,7 +57,7 @@ export async function getModuleQuestions(module) {
         // Cache read failed, proceed to fetch
     }
 
-    // 2. If no cache, await Supabase (blocking fetch)
-    const freshData = await fetchFromSupabase();
+    // 2. If no cache, await API (blocking fetch)
+    const freshData = await fetchFromAPI();
     return freshData || [];
 }

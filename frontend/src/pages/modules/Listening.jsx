@@ -105,7 +105,7 @@ export default function Listening() {
     const handleSubmit = async () => {
         if (!selectedAnswer) return
 
-        const correct = selectedAnswer === currentQuestion.correct_answer
+        const correct = String(selectedAnswer).trim().toLowerCase() === String(currentQuestion.correct_answer).trim().toLowerCase()
         setIsCorrect(correct)
         setShowResult(true)
         setScore(prev => {
@@ -122,7 +122,7 @@ export default function Listening() {
 
             return newScore;
         })
-        if (!completedQuestions.includes(currentIndex)) {
+        if (correct && !completedQuestions.includes(currentIndex)) {
             setCompletedQuestions(prev => [...prev, currentIndex])
         }
     }
@@ -132,6 +132,7 @@ export default function Listening() {
             setCurrentIndex(prev => prev + 1)
             setSelectedAnswer(null)
             setShowResult(false)
+            setIsCorrect(false)
             setProgress(0)
             setCurrentTime(0)
             setIsPlaying(false)
@@ -271,45 +272,105 @@ export default function Listening() {
                 </div>
             </div>
 
-            {/* Progress Bar */}
-            <div style={{
-                backgroundColor: 'white',
-                borderRadius: '12px',
-                padding: '16px 20px',
-                marginBottom: '24px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            }}>
+            {/* Progress Bar moved into sidebar or kept above? Let's keep it above for consistency or put it in content. */}
+            
+            <div className="grid-sidebar">
+                {/* Questions Sidebar */}
                 <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: '10px',
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    padding: '20px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    height: 'fit-content',
                 }}>
-                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
-                        Question {currentIndex + 1} of {questions.length}
-                        {completedQuestions.includes(currentIndex) && <Check size={16} style={{ color: '#22C55E', marginLeft: '8px' }} />}
-                    </span>
-                    <span style={{ fontSize: '14px', color: '#6B7280' }}>
-                        {Math.round(questionProgress)}%
-                    </span>
+                    <h3 style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#6B7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        marginBottom: '16px',
+                    }}>
+                        Questions
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {questions.map((q, idx) => (
+                            <motion.button
+                                key={q.id || idx}
+                                onClick={() => setCurrentIndex(idx)}
+                                whileHover={{ x: 4 }}
+                                style={{
+                                    padding: '12px 16px',
+                                    borderRadius: '10px',
+                                    border: 'none',
+                                    backgroundColor: currentIndex === idx ? '#F0FDF4' : 'transparent',
+                                    borderLeft: currentIndex === idx ? '3px solid #22C55E' : '3px solid transparent',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ flex: 1 }}>
+                                        <p style={{
+                                            fontSize: '14px',
+                                            fontWeight: currentIndex === idx ? '600' : '500',
+                                            color: currentIndex === idx ? '#166534' : '#374151',
+                                            margin: 0,
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            maxWidth: '180px'
+                                        }}>
+                                            {q.title || `Question ${idx + 1}`}
+                                        </p>
+                                    </div>
+                                    {completedQuestions.includes(idx) && (
+                                        <Check size={14} style={{ color: '#22C55E' }} />
+                                    )}
+                                </div>
+                            </motion.button>
+                        ))}
+                    </div>
                 </div>
-                <div style={{
-                    height: '6px',
-                    backgroundColor: '#E5E7EB',
-                    borderRadius: '3px',
-                    overflow: 'hidden',
-                }}>
-                    <motion.div
-                        animate={{ width: `${questionProgress}% ` }}
-                        style={{
-                            height: '100%',
-                            background: 'linear-gradient(90deg, #22C55E 0%, #4ADE80 100%)',
-                            borderRadius: '3px',
-                        }}
-                    />
-                </div>
-            </div>
 
-            {/* Main Content */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    {/* Progress Bar inside content area */}
+                    <div style={{
+                        backgroundColor: 'white',
+                        borderRadius: '12px',
+                        padding: '16px 20px',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginBottom: '10px',
+                        }}>
+                            <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                                Question {currentIndex + 1} of {questions.length}
+                                {completedQuestions.includes(currentIndex) && <Check size={16} style={{ color: '#22C55E', marginLeft: '8px' }} />}
+                            </span>
+                            <span style={{ fontSize: '14px', color: '#6B7280' }}>
+                                {Math.round(questionProgress)}%
+                            </span>
+                        </div>
+                        <div style={{
+                            height: '6px',
+                            backgroundColor: '#E5E7EB',
+                            borderRadius: '3px',
+                            overflow: 'hidden',
+                        }}>
+                            <motion.div
+                                animate={{ width: `${questionProgress}%` }}
+                                style={{
+                                    height: '100%',
+                                    background: 'linear-gradient(90deg, #22C55E 0%, #4ADE80 100%)',
+                                    borderRadius: '3px',
+                                }}
+                            />
+                        </div>
+                    </div>
+
             <motion.div
                 key={currentIndex}
                 initial={{ opacity: 0, y: 20 }}
@@ -408,7 +469,7 @@ export default function Listening() {
                             overflow: 'hidden',
                         }}>
                             <motion.div
-                                animate={{ width: `${progress}% ` }}
+                                animate={{ width: `${progress}%` }}
                                 style={{
                                     height: '100%',
                                     backgroundColor: 'white',
@@ -543,7 +604,7 @@ export default function Listening() {
                                     padding: '16px 20px',
                                     borderRadius: '12px',
                                     backgroundColor: isCorrect ? '#F0FDF4' : '#FEF2F2',
-                                    borderLeft: `4px solid ${isCorrect ? '#22C55E' : '#EF4444'} `,
+                                    borderLeft: `4px solid ${isCorrect ? '#22C55E' : '#EF4444'}`,
                                     marginBottom: '24px',
                                 }}
                             >
@@ -631,6 +692,8 @@ export default function Listening() {
                     </div>
                 </div>
             </motion.div>
+        </div>
+    </div>
 
             {/* Completion Popup */}
             <AnimatePresence>
@@ -704,6 +767,7 @@ export default function Listening() {
                                         setCurrentIndex(0);
                                         setScore({ correct: 0, total: 0 });
                                         setShowResult(false);
+                                        setCompletedQuestions([]);
                                     }}
                                     style={{
                                         padding: '14px',

@@ -7,6 +7,8 @@ Populates the database with initial data:
 - Sample Questions and Prompts for all modules
 """
 
+from dotenv import load_dotenv
+load_dotenv()
 from app import create_app, db
 from app.models.user import Role, User
 from app.models.module import Module, Question

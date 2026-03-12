@@ -151,6 +151,14 @@ export default function Speaking() {
             setTimeout(() => {
                 setFeedback(result)
                 setSubmitting(false)
+                
+                // Track completion
+                if (!completedTopics.includes(selectedPrompt.id)) {
+                    setCompletedTopics(prev => [...prev, selectedPrompt.id])
+                }
+                
+                // Save score
+                saveModuleScore('speaking', result.score, elapsed);
             }, 1500)
 
         } catch (error) {
@@ -319,8 +327,13 @@ export default function Speaking() {
                                     color: selectedPrompt?.id === prompt.id ? '#166534' : '#374151',
                                     margin: 0,
                                     marginBottom: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: '8px'
                                 }}>
                                     {prompt.title}
+                                    {completedTopics.includes(prompt.id) && <CheckCircle size={14} style={{ color: '#22C55E' }} />}
                                 </p>
                                 <p style={{
                                     fontSize: '12px',
