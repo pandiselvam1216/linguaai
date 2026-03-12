@@ -16,14 +16,9 @@ export default function CriticalThinking() {
     const [isTimerActive, setIsTimerActive] = useState(false)
     const [result, setResult] = useState(null)
     const [loading, setLoading] = useState(true)
-    const [completedTopics, setCompletedTopics] = useState(() => {
-        const saved = localStorage.getItem('neuraLingua_completed_critical_thinking');
-        return saved ? JSON.parse(saved) : [];
-    });
+    const [completedTopics, setCompletedTopics] = useState([]);
 
-    useEffect(() => {
-        localStorage.setItem('neuraLingua_completed_critical_thinking', JSON.stringify(completedTopics));
-    }, [completedTopics]);
+    // No localStorage - all data stored in backend
 
     const recognitionRef = useRef(null)
 

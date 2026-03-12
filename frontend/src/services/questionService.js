@@ -1,14 +1,12 @@
 import api from './api'
 
 /**
- * Fetch questions for a given module using a Cache-First strategy.
- * Returns local data immediately if available, and updates the cache from the Flask API in the background.
+ * Fetch questions for a given module from backend API only.
+ * No local storage - always fetches fresh data from server.
  * @param {string} module - 'grammar' | 'listening' | 'reading' | 'writing' | 'speaking'
  * @returns {Promise<Array>} array of question objects
  */
 export async function getModuleQuestions(module) {
-    const cacheKey = `neuralingua_questions_${module}`;
-    
     // Helper to format API data consistently
     const formatData = (items) => items.map(item => ({
         id: item.id,
@@ -23,41 +21,17 @@ export async function getModuleQuestions(module) {
         audio_data: item.audio_data || item.audio_link || item.media_url || null,
     }));
 
-    // Function to fetch fresh data from Local Flask API and update cache
-    const fetchFromAPI = async () => {
-        try {
-            // Using the local API instance configured in api.js
-            const response = await api.get(`/${module}/questions`);
-            const data = response.data.questions;
-
-            if (data && data.length > 0) {
-                const formatted = formatData(data);
-                localStorage.setItem(cacheKey, JSON.stringify(formatted));
-                return formatted;
-            }
-        } catch (error) {
-            console.error(`Failed to fetch ${module} questions from local API:`, error);
-        }
-        return null;
-    };
-
-    // 1. Try Cache First
+    // Always fetch fresh data from API - no caching
     try {
-        const raw = localStorage.getItem(cacheKey);
-        if (raw) {
-            const list = JSON.parse(raw);
-            if (list && list.length > 0) {
-                // Kick off background refresh without awaiting
-                fetchFromAPI();
-                // Return cached data immediately for instant UI render
-                return formatData(list);
-            }
-        }
-    } catch (_) {
-        // Cache read failed, proceed to fetch
-    }
+        const response = await api.get(`/${module}/questions`);
+        const data = response.data.questions || response.data.prompts || [];
 
-    // 2. If no cache, await API (blocking fetch)
-    const freshData = await fetchFromAPI();
-    return freshData || [];
+        if (data && data.length > 0) {
+            return formatData(data);
+        }
+    } catch (error) {
+        console.error(`Failed to fetch ${module} questions from API:`, error);
+    }
+    
+    return [];
 }

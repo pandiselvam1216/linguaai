@@ -179,14 +179,9 @@ export default function Grammar() {
     const [showRules, setShowRules] = useState(false);
     const [activeTab, setActiveTab] = useState('practice'); // 'practice' | 'trainer'
     const [trainerMode, setTrainerMode] = useState(null); // null | 'flashcards' | 'quiz'
-    const [completedQuestions, setCompletedQuestions] = useState(() => {
-        const saved = localStorage.getItem('neuraLingua_completed_grammar');
-        return saved ? JSON.parse(saved) : [];
-    });
+    const [completedQuestions, setCompletedQuestions] = useState([]);
 
-    useEffect(() => {
-        localStorage.setItem('neuraLingua_completed_grammar', JSON.stringify(completedQuestions));
-    }, [completedQuestions]);
+    // No localStorage - all data stored in backend
 
     useEffect(() => {
         fetchQuestions()

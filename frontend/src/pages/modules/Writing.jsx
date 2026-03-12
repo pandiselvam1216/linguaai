@@ -127,14 +127,9 @@ export default function Writing() {
     const [showRules, setShowRules] = useState(false);
     const [activeTab, setActiveTab] = useState('practice'); // 'practice' | 'trainer'
     const [trainerMode, setTrainerMode] = useState(null); // null | 'speed'
-    const [completedTopics, setCompletedTopics] = useState(() => {
-        const saved = localStorage.getItem('neuraLingua_completed_writing');
-        return saved ? JSON.parse(saved) : [];
-    });
+    const [completedTopics, setCompletedTopics] = useState([]);
 
-    useEffect(() => {
-        localStorage.setItem('neuraLingua_completed_writing', JSON.stringify(completedTopics));
-    }, [completedTopics]);
+    // No localStorage - all data stored in backend
 
     useEffect(() => {
         fetchPrompts()

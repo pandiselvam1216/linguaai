@@ -16,6 +16,7 @@ speaking_bp = Blueprint('speaking', __name__)
 
 
 @speaking_bp.route('/prompts', methods=['GET'])
+@speaking_bp.route('/questions', methods=['GET'])
 @jwt_required()
 def get_prompts():
     """Get speaking prompts"""

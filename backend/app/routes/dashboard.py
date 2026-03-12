@@ -42,7 +42,7 @@ def get_stats():
     modules = Module.query.filter_by(is_active=True).order_by(Module.order).all()
     module_stats = []
     
-    from app.models.question import Question
+    from app.models.module import Question
     
     # Query module stats using a single database query grouped by module ID
     module_stats_data = db.session.query(

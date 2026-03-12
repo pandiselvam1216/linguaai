@@ -640,34 +640,23 @@ export default function Vocabulary() {
     const [searching, setSearching] = useState(false)
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState('search') // 'search' | 'saved' | 'trainer'
-    const [completedModes, setCompletedModes] = useState(() => {
-        const saved = localStorage.getItem('neuraLingua_completed_vocab_modes');
-        return saved ? JSON.parse(saved) : [];
-    });
+    const [completedModes, setCompletedModes] = useState([]);
     const [showRules, setShowRules] = useState(false);
-
-    useEffect(() => {
-        localStorage.setItem('neuraLingua_completed_vocab_modes', JSON.stringify(completedModes));
-    }, [completedModes]);
 
     useEffect(() => {
         fetchSavedWords()
     }, [])
 
-    // ── localStorage helpers for offline persistence ──────────────────────────
-    const LS_KEY = 'lingua_saved_words'
-    const lsGetWords = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]') } catch { return [] } }
-    const lsSaveWords = (words) => localStorage.setItem(LS_KEY, JSON.stringify(words))
+    // All data fetched from backend API - no localStorage caching
 
     const fetchSavedWords = async () => {
         try {
             const res = await api.get('/vocabulary/saved')
             const words = res.data.words || []
             setSavedWords(words)
-            lsSaveWords(words) // keep localStorage in sync
         } catch (error) {
-            // Backend unavailable — fall back to localStorage
-            setSavedWords(lsGetWords())
+            console.error('Failed to fetch saved words:', error)
+            setSavedWords([])
         } finally {
             setLoading(false)
         }

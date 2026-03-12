@@ -97,7 +97,8 @@ class Question(db.Model):
             'difficulty': self.difficulty,
             'points': self.points,
             'time_limit': self.time_limit,
-            'tags': self.tags
+            'tags': self.tags,
+            'is_active': self.is_active
         }
         if include_answer:
             data['correct_answer'] = self.correct_answer

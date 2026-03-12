@@ -16,6 +16,7 @@ writing_bp = Blueprint('writing', __name__)
 
 
 @writing_bp.route('/prompts', methods=['GET'])
+@writing_bp.route('/questions', methods=['GET'])
 @jwt_required()
 def get_prompts():
     """Get writing prompts"""

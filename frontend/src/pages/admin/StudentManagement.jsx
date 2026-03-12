@@ -4,7 +4,7 @@ import {
     Users, Search, Plus, Trash2, Edit2, X, Check,
     ChevronLeft, ChevronRight, UserCheck, UserX, Mail, Upload, Download
 } from 'lucide-react'
-import { supabase } from '../../utils/supabaseClient'
+import api from '../../services/api'
 import Modal from '../../components/common/Modal'
 
 export default function StudentManagement() {
@@ -34,48 +34,21 @@ export default function StudentManagement() {
     const fetchStudents = async () => {
         setLoading(true)
         try {
-            // Fetch users with role 'student'
-            let query = supabase
-                .from('user_profiles')
-                .select('*')
-                .eq('role', 'student')
-                .order('created_at', { ascending: false })
-
-            if (search) {
-                query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`)
-            }
-
-            const { data: users, error: usersError } = await query
-            if (usersError) throw usersError
-
-            // Fetch scores to get stats
-            const { data: scores, error: scoresError } = await supabase
-                .from('scores')
-                .select('user_id, score')
-
-            if (scoresError) throw scoresError
-
-            const studentsWithStats = (users || []).map(user => {
-                const userScores = (scores || []).filter(s => s.user_id === user.id)
-                const attempts = userScores.length
-                const totalScore = userScores.reduce((acc, curr) => acc + curr.score, 0)
-                const average_score = attempts > 0 ? Math.round(totalScore / attempts) : 0
-
-                return {
-                    ...user,
-                    is_active: true, // Mocking is_active as user_profiles doesn't have it by default
-                    stats: { attempts, average_score }
+            // Fetch students from backend API
+            const response = await api.get('/admin/students', {
+                params: {
+                    page: page,
+                    per_page: 20,
+                    search: search
                 }
             })
-
-            // Basic pagination calculation
-            const startIndex = (page - 1) * 10
-            const paginatedStudents = studentsWithStats.slice(startIndex, startIndex + 10)
-
-            setStudents(paginatedStudents)
-            setTotalPages(Math.ceil(studentsWithStats.length / 10) || 1)
+            
+            const data = response.data
+            setStudents(data.students || [])
+            setTotalPages(data.pages || 1)
         } catch (error) {
             console.error('Failed to fetch students:', error)
+            showAlert('Error', 'Failed to fetch students', 'danger')
             setStudents([])
         } finally {
             setLoading(false)
@@ -110,47 +83,26 @@ export default function StudentManagement() {
 
         try {
             if (editingStudent) {
-                const { error } = await supabase
-                    .from('user_profiles')
-                    .update({ full_name: formData.full_name, email: formData.email })
-                    .eq('id', editingStudent.id)
-                if (error) throw error
-            } else {
-                // Must create in auth.users first to satisfy foreign key constraint
-                const { data: authData, error: authError } = await supabase.auth.signUp({
+                // Update existing student
+                await api.put(`/admin/students/${editingStudent.id}`, {
                     email: formData.email,
-                    password: formData.password || "TempPass123!",
-                    options: {
-                        data: {
-                            full_name: formData.full_name,
-                            role: 'student'
-                        }
-                    }
-                });
-
-                if (authError) throw authError;
-
-                if (authData?.user) {
-                    // Insert into user_profiles with the generated auth.users ID
-                    const { error } = await supabase
-                        .from('user_profiles')
-                        .insert([{
-                            id: authData.user.id,
-                            full_name: formData.full_name,
-                            email: formData.email,
-                            role: 'student'
-                        }]);
-
-                    // If insert fails with duplicate key, a database trigger might have already created it. 
-                    // So we only throw if it's NOT a duplicate key error.
-                    if (error && error.code !== '23505') throw error;
-                }
+                    full_name: formData.full_name,
+                    is_active: formData.is_active
+                })
+            } else {
+                // Create new student
+                await api.post('/admin/students', {
+                    email: formData.email,
+                    password: formData.password || generatePassword(),
+                    full_name: formData.full_name,
+                    is_active: formData.is_active
+                })
             }
             handleCloseModal()
             fetchStudents()
         } catch (error) {
             console.error('Failed to save student:', error)
-            showAlert('Error', error.message || 'Failed to save student', 'danger')
+            showAlert('Error', error.response?.data?.message || 'Failed to save student', 'danger')
         } finally {
             setSaving(false)
         }
@@ -215,45 +167,24 @@ export default function StudentManagement() {
                 }
             }
 
-            // 2. Fetch existing to prevent duplicates
-            const { data: existingProfiles, error: fetchError } = await supabase
-                .from('user_profiles')
-                .select('email');
-
-            if (fetchError) throw fetchError;
-            const existingEmails = new Set(existingProfiles.map(p => p.email.toLowerCase()));
-
-            // 4. Batch Create Users directly into profiles (Bypassing Auth Rate Limit per user request)
+            // 2. Batch create students via backend API
             let skipped = 0;
             const insertPayload = [];
             const errorList = [];
 
             for (const user of newUsers) {
-                if (existingEmails.has(user.email)) {
-                    skipped++;
-                    errorList.push(`[${user.email}] Already exists.`);
-                    continue;
-                }
-
                 const tempPassword = generatePassword();
-                const fakeAuthId = crypto.randomUUID(); // Used just to satisfy the profiles table
-
-                // Insert profile (If foreign key constraint exists, this WILL fail unless the DB allows it)
-                const { error: insertError } = await supabase
-                    .from('user_profiles')
-                    .insert([{
-                        id: fakeAuthId,
-                        full_name: user.full_name,
+                try {
+                    await api.post('/admin/students/import', {
                         email: user.email,
-                        role: 'student'
-                    }]);
-
-                if (insertError) {
-                    console.error("Profile creation failed for:", user.email, insertError);
-                    skipped++;
-                    errorList.push(`[${user.email}] DB Error: ${insertError.message}`);
-                } else {
+                        full_name: user.full_name,
+                        password: tempPassword
+                    })
                     insertPayload.push({ email: user.email, tempPassword });
+                } catch (error) {
+                    console.error(`Failed to create student ${user.email}:`, error);
+                    skipped++;
+                    errorList.push(`[${user.email}] ${error.response?.data?.message || 'DB Error'}`);
                 }
             }
 
@@ -327,13 +258,11 @@ export default function StudentManagement() {
                 setAlertConfig({ isOpen: false })
                 setDeleting(studentId)
                 try {
-                    const { error } = await supabase.from('user_profiles').delete().eq('id', studentId)
-                    if (error) throw error
-                    // Deleting from auth.users requires admin API, so we just delete the profile.
+                    await api.delete(`/admin/students/${studentId}`)
                     fetchStudents()
                 } catch (error) {
                     console.error('Failed to delete student:', error)
-                    showAlert('Error', error.message || 'Failed to delete student', 'danger')
+                    showAlert('Error', error.response?.data?.message || 'Failed to delete student', 'danger')
                 } finally {
                     setDeleting(null)
                 }
@@ -342,8 +271,15 @@ export default function StudentManagement() {
     }
 
     const handleToggleStatus = async (student) => {
-        // Toggle logic (Assuming we just pretend since we mock is_active)
-        console.log("Toggle status not fully supported without custom columns on Supabase")
+        try {
+            await api.post(`/admin/students/${student.id}/toggle-status`, {
+                is_active: !student.is_active
+            })
+            fetchStudents()
+        } catch (error) {
+            console.error('Failed to toggle student status:', error)
+            showAlert('Error', error.response?.data?.message || 'Failed to toggle status', 'danger')
+        }
     }
 
     if (loading) {

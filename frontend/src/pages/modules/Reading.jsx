@@ -16,14 +16,9 @@ export default function Reading() {
     const [timeLeft, setTimeLeft] = useState(600)
     const [showPopup, setShowPopup] = useState(false);
     const [showRules, setShowRules] = useState(false);
-    const [completedPassages, setCompletedPassages] = useState(() => {
-        const saved = localStorage.getItem('neuraLingua_completed_reading');
-        return saved ? JSON.parse(saved) : [];
-    });
+    const [completedPassages, setCompletedPassages] = useState([]);
 
-    useEffect(() => {
-        localStorage.setItem('neuraLingua_completed_reading', JSON.stringify(completedPassages));
-    }, [completedPassages]);
+    // No localStorage - all data stored in backend
 
     // PDF viewer state
     const [pdfUrl, setPdfUrl] = useState(null)      // blob URL of loaded PDF

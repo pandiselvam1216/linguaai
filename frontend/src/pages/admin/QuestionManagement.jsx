@@ -33,7 +33,6 @@ export default function QuestionManagement() {
     const [saving, setSaving] = useState(false)
     const [saveError, setSaveError] = useState('')
     const [saveSuccess, setSaveSuccess] = useState(false)
-    const [usingLocalStorage, setUsingLocalStorage] = useState(false)
     const [alertConfig, setAlertConfig] = useState({ isOpen: false })
 
     const showAlert = (title, message, theme = 'info') => {
@@ -54,16 +53,6 @@ export default function QuestionManagement() {
     const [pdfLoading, setPdfLoading] = useState(false)
     const [pdfDragOver, setPdfDragOver] = useState(false)
     const pdfInputRef = useRef(null)
-
-    // --- LocalStorage helpers ---
-    const LS_KEY = `neuralingua_questions_${activeModule}`
-
-    const getLocalQuestions = () => {
-        try { return JSON.parse(localStorage.getItem(`neuralingua_questions_${activeModule}`)) || [] }
-        catch { return [] }
-    }
-    const saveLocalQuestions = (list) =>
-        localStorage.setItem(`neuralingua_questions_${activeModule}`, JSON.stringify(list))
 
     useEffect(() => {
         fetchQuestions()
@@ -89,12 +78,10 @@ export default function QuestionManagement() {
             }))
             
             setQuestions(normalized)
-            setUsingLocalStorage(false)
         } catch (error) {
             console.error('Failed to fetch questions:', error)
-            setUsingLocalStorage(true)
-            setQuestions(getLocalQuestions())
-            showAlert('API Error', 'Failed to fetch questions from the server.', 'danger')
+            showAlert('API Error', 'Failed to fetch questions from the server. Please try again.', 'danger')
+            setQuestions([])
         } finally {
             setLoading(false)
         }
@@ -289,29 +276,6 @@ export default function QuestionManagement() {
             backgroundColor: '#F9FAFB',
             minHeight: '100vh',
         }}>
-            {/* Local Storage Mode Banner */}
-            {usingLocalStorage && (
-                <div style={{
-                    marginBottom: '20px',
-                    padding: '12px 16px',
-                    backgroundColor: '#FFFBEB',
-                    border: '1px solid #FCD34D',
-                    borderRadius: '10px',
-                    fontSize: '13px',
-                    color: '#92400E',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '10px',
-                }}>
-                    <span>⚠️</span>
-                    <div>
-                        <strong>Saved locally (browser only).</strong> Questions are not synced to the database yet because the Supabase <code>questions</code> table is missing or doesn't have the required columns.<br />
-                        <strong>Run this SQL in your Supabase SQL Editor to fix:</strong>
-                        <pre style={{ marginTop: '8px', padding: '10px', backgroundColor: '#FEF3C7', borderRadius: '6px', fontSize: '12px', overflowX: 'auto', whiteSpace: 'pre-wrap' }}>{`-- Create questions table (if missing)\nCREATE TABLE IF NOT EXISTS public.questions (\n  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,\n  module text NOT NULL,\n  title text,\n  content text NOT NULL,\n  difficulty integer DEFAULT 1,\n  options jsonb,\n  correct_answer text,\n  explanation text,\n  audio_data text,\n  pdf_name text,\n  created_at timestamptz DEFAULT now()\n);\n\n-- Or add missing columns to existing table:\nALTER TABLE public.questions\n  ADD COLUMN IF NOT EXISTS title text,\n  ADD COLUMN IF NOT EXISTS pdf_name text;\n\n-- Allow authenticated users\nALTER TABLE public.questions ENABLE ROW LEVEL SECURITY;\nCREATE POLICY IF NOT EXISTS \"allow_all\" ON public.questions FOR ALL USING (true);`}</pre>
-                    </div>
-                </div>
-            )}
-
             {/* Save success toast (top-right fixed) */}
             {saveSuccess && (
                 <div style={{

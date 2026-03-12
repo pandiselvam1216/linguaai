@@ -9,8 +9,7 @@ import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts'
 import { useState, useEffect } from 'react'
-import { fetchDashboardStats } from '../services/supabaseService'
-import { getLocalState, checkAndIncrementStreak } from '../utils/localScoring'
+import api from '../services/api'
 
 const modules = [
     { path: '/listening', icon: Headphones, title: 'Listening', desc: 'Audio comprehension', color: '#3B82F6', bg: '#EFF6FF' },
@@ -46,28 +45,39 @@ export default function Dashboard() {
 
     useEffect(() => {
         loadStats()
-    }, [])
+    }, [user?.id])
 
     const loadStats = async () => {
         try {
-            // Check streak first and update local state
-            const updatedMetrics = checkAndIncrementStreak();
-
-            // Try Supabase first, fall back to local
-            const supabaseStats = await fetchDashboardStats()
-            if (supabaseStats.modulesCompleted > 0) {
-                setStats({ ...supabaseStats, streakDays: supabaseStats.streakDays || updatedMetrics.streakDays })
-                setChartData(supabaseStats.chartData)
-            } else {
-                // Fall back to localStorage
-                const localState = getLocalState()
-                setStats(localState.metrics)
-                setChartData(localState.chartData || [])
-            }
+            // Fetch from backend API (real-time user-specific data)
+            const response = await api.get('/dashboard/stats')
+            const backendStats = response.data
+            
+            // Always use ONLY backend data - never fall back to localStorage
+            // This ensures each user sees their own data, not shared mock data
+            setStats({
+                overallScore: backendStats.average_score || 0,
+                modulesCompleted: backendStats.total_attempts || 0,
+                timeSpentMinutes: 0,
+                streakDays: 0  // Use 0 until streak is stored in database
+            })
+            
+            // Build chart data from module data if available
+            const chartData = backendStats.modules?.map((m, idx) => ({
+                day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][idx % 7],
+                score: Math.round(m.average_score || 0)
+            })) || []
+            setChartData(chartData)
         } catch (e) {
-            const localState = getLocalState()
-            setStats(localState.metrics)
-            setChartData(localState.chartData || [])
+            console.error('Failed to load dashboard stats:', e)
+            // Show empty state on API failure - do NOT use localStorage
+            setStats({
+                overallScore: 0,
+                modulesCompleted: 0,
+                timeSpentMinutes: 0,
+                streakDays: 0
+            })
+            setChartData([])
         } finally {
             setLoadingStats(false)
         }
@@ -166,7 +176,7 @@ export default function Dashboard() {
                         <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '20px' }}>
                             Weekly Progress
                             {!loadingStats && <span style={{ fontSize: '12px', fontWeight: '400', color: '#6B7280', marginLeft: '8px' }}>
-                                (from Supabase)
+                                (Real-time)
                             </span>}
                         </h3>
                         {chartData.length > 0 ? (

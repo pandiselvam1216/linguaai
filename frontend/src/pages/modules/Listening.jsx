@@ -62,7 +62,7 @@ function AudioSprint({ questions, onBack }) {
                     <button 
                         key={i}
                         onClick={() => handleAnswer(opt.value === questions[index].correct_answer)}
-                        style={{ padding: '16px', borderRadius: '12px', border: 'none', background: 'white', border: '2px solid #E5E7EB', color: '#374151', fontWeight: '600', cursor: 'pointer' }}
+                        style={{ padding: '16px', borderRadius: '12px', border: '2px solid #E5E7EB', background: 'white', color: '#374151', fontWeight: '600', cursor: 'pointer' }}
                     >
                         {opt.text}
                     </button>
@@ -171,18 +171,13 @@ export default function Listening() {
     const [duration, setDuration] = useState(0)
     const [currentTime, setCurrentTime] = useState(0)
     const [isMuted, setIsMuted] = useState(false)
-    const [completedQuestions, setCompletedQuestions] = useState(() => {
-        const saved = localStorage.getItem('neuraLingua_completed_listening');
-        return saved ? JSON.parse(saved) : [];
-    });
+    const [completedQuestions, setCompletedQuestions] = useState([]);
     const [showPopup, setShowPopup] = useState(false);
     const [showRules, setShowRules] = useState(false);
     const [activeTab, setActiveTab] = useState('practice'); // 'practice' | 'trainer'
     const [trainerMode, setTrainerMode] = useState(null); // null | 'sprint' | 'dictation'
 
-    useEffect(() => {
-        localStorage.setItem('neuraLingua_completed_listening', JSON.stringify(completedQuestions));
-    }, [completedQuestions]);
+    // No localStorage - all data stored in backend
     const audioRef = useRef(null)
 
     useEffect(() => {

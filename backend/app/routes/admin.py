@@ -226,6 +226,68 @@ def delete_student(user_id):
     return jsonify({'message': 'Student deleted successfully'}), 200
 
 
+@admin_bp.route('/students/<int:user_id>/toggle-status', methods=['POST'])
+@jwt_required()
+@role_required('admin')
+def toggle_student_status(user_id):
+    """Toggle student active/inactive status"""
+    user = db.session.get(User, user_id)
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    data = request.get_json()
+    is_active = data.get('is_active')
+    
+    if is_active is None:
+        return jsonify({'error': 'is_active is required'}), 400
+    
+    user.is_active = is_active
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Student status updated successfully',
+        'user': user.to_dict()
+    }), 200
+
+
+@admin_bp.route('/students/import', methods=['POST'])
+@jwt_required()
+@role_required('admin')
+def import_students():
+    """Bulk import students"""
+    data = request.get_json()
+    
+    if not data or not all(key in data for key in ['email', 'password', 'full_name']):
+        return jsonify({'error': 'Email, password, and full_name are required'}), 400
+    
+    # Check if user exists
+    if User.query.filter_by(email=data['email']).first():
+        return jsonify({'error': f'Email {data["email"]} already registered'}), 409
+    
+    # Get student role
+    student_role = Role.query.filter_by(name='student').first()
+    if not student_role:
+        return jsonify({'error': 'Student role not found'}), 500
+    
+    # Create user
+    user = User(
+        email=data['email'],
+        password_hash=generate_password_hash(data['password']),
+        full_name=data.get('full_name', ''),
+        role_id=student_role.id,
+        is_active=data.get('is_active', True)
+    )
+    
+    db.session.add(user)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Student imported successfully',
+        'user': user.to_dict()
+    }), 201
+
+
 @admin_bp.route('/reports', methods=['GET'])
 @jwt_required()
 @role_required('admin')
