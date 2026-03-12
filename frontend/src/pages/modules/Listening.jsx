@@ -1,9 +1,162 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Headphones, Play, Pause, Volume2, VolumeX, Check, X, ChevronRight, Award, Info } from 'lucide-react'
+import { Headphones, Play, Pause, Volume2, VolumeX, Check, X, ChevronRight, Award, Info, Dumbbell, Zap, ChevronLeft, Send, RotateCcw } from 'lucide-react'
 import { getModuleQuestions } from '../../services/questionService'
 import { saveModuleScore } from '../../utils/localScoring'
 import ModuleRulesModal from '../../components/common/ModuleRulesModal'
+
+// --- Trainer Sub-components ---
+function AudioSprint({ questions, onBack }) {
+    const [index, setIndex] = useState(0);
+    const [score, setScore] = useState(0);
+    const [showResults, setShowResults] = useState(false);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const audioRef = useRef(null);
+
+    const handleAnswer = (correct) => {
+        if (correct) setScore(s => s + 1);
+        if (index + 1 < questions.length) {
+            setIndex(prev => prev + 1);
+        } else {
+            setShowResults(true);
+            saveModuleScore('listening', Math.round(((score + (correct ? 1 : 0)) / questions.length) * 100), questions.length * 20);
+        }
+    }
+
+    if (showResults) {
+        return (
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+                <div style={{ fontSize: '64px', marginBottom: '20px' }}>⚡</div>
+                <h2 style={{ fontSize: '28px', fontWeight: '800', color: '#111827', margin: '0 0 8px' }}>Sprint Finished!</h2>
+                <p style={{ color: '#6B7280', marginBottom: '32px' }}>You processed {score} clips correctly.</p>
+                <button onClick={onBack} style={{ padding: '12px 24px', borderRadius: '12px', background: '#22C55E', color: 'white', fontWeight: '700', border: 'none', cursor: 'pointer' }}>Back to Modes</button>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
+            <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '24px', background: 'none', border: 'none', color: '#22C55E', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
+                <ChevronLeft size={16} /> All Modes
+            </button>
+
+            <div style={{ marginBottom: '32px' }}>
+                <Zap size={40} style={{ color: '#F59E0B', marginBottom: '16px' }} />
+                <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#111827', margin: 0 }}>Rapid-Fire Prep</h2>
+                <p style={{ color: '#6B7280' }}>Listen and pick the correct meaning immediately.</p>
+            </div>
+
+            <div style={{ padding: '40px', background: '#F0FDF4', borderRadius: '24px', marginBottom: '32px', border: '2px solid #DCFCE7' }}>
+                <audio ref={audioRef} src={questions[index].audio_data} onEnded={() => setIsPlaying(false)} />
+                <button 
+                    onClick={() => { audioRef.current.play(); setIsPlaying(true); }}
+                    style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'white', border: 'none', boxShadow: '0 10px 20px rgba(34, 197, 94, 0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}
+                >
+                    {isPlaying ? <Pause style={{ color: '#22C55E' }} /> : <Play style={{ color: '#22C55E', marginLeft: '4px' }} />}
+                </button>
+                <p style={{ marginTop: '20px', fontWeight: '600', color: '#166534' }}>CLIP {index + 1} OF {questions.length}</p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {questions[index].options.map((opt, i) => (
+                    <button 
+                        key={i}
+                        onClick={() => handleAnswer(opt.value === questions[index].correct_answer)}
+                        style={{ padding: '16px', borderRadius: '12px', border: 'none', background: 'white', border: '2px solid #E5E7EB', color: '#374151', fontWeight: '600', cursor: 'pointer' }}
+                    >
+                        {opt.text}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function ListeningDictation({ questions, onBack }) {
+    const [index, setIndex] = useState(0);
+    const [userInput, setUserInput] = useState('');
+    const [showCorrection, setShowCorrection] = useState(false);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const audioRef = useRef(null);
+
+    const handleSubmit = () => {
+        setShowCorrection(true);
+    }
+
+    const handleNext = () => {
+        if (index + 1 < questions.length) {
+            setIndex(prev => prev + 1);
+            setUserInput('');
+            setShowCorrection(false);
+        } else {
+            onBack();
+        }
+    }
+
+    return (
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+            <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '24px', background: 'none', border: 'none', color: '#22C55E', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
+                <ChevronLeft size={16} /> All Modes
+            </button>
+
+            <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+                <Headphones size={40} style={{ color: '#22C55E', marginBottom: '16px' }} />
+                <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#111827', margin: 0 }}>Dictation Drill</h2>
+                <p style={{ color: '#6B7280' }}>Listen carefully and type what was said.</p>
+            </div>
+
+            <div style={{ padding: '24px', background: 'white', borderRadius: '20px', border: '2px solid #F3F4F6', marginBottom: '24px' }}>
+                <audio ref={audioRef} src={questions[index].audio_data} onEnded={() => setIsPlaying(false)} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                    <button 
+                        onClick={() => { audioRef.current.play(); setIsPlaying(true); }}
+                        style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#F0FDF4', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                         {isPlaying ? <Pause size={20} style={{ color: '#22C55E' }} /> : <Play size={20} style={{ color: '#22C55E' }} />}
+                    </button>
+                    <div>
+                        <p style={{ margin: 0, fontWeight: '700', color: '#111827' }}>Click to Play</p>
+                        <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>Listen as many times as you need</p>
+                    </div>
+                </div>
+
+                <textarea 
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    placeholder="Type what you hear..."
+                    disabled={showCorrection}
+                    style={{ width: '100%', minHeight: '120px', padding: '16px', borderRadius: '12px', border: '2px solid #E5E7EB', outline: 'none', fontSize: '16px', transition: 'border-color 0.2s', resize: 'none' }}
+                />
+
+                {showCorrection && (
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ marginTop: '20px', padding: '16px', background: '#F8FAFC', borderRadius: '12px', borderLeft: '4px solid #3B82F6' }}>
+                        <p style={{ margin: 0, fontSize: '12px', color: '#6B7280', fontWeight: '600' }}>TRANSCRIPT REFERENCE</p>
+                        <p style={{ margin: '8px 0 0 0', color: '#1E40AF', fontStyle: 'italic' }}>"{questions[index].content}"</p>
+                    </motion.div>
+                )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                {!showCorrection ? (
+                    <button 
+                        onClick={handleSubmit}
+                        disabled={!userInput}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', borderRadius: '12px', background: userInput ? '#22C55E' : '#E5E7EB', color: 'white', fontWeight: '700', border: 'none', cursor: userInput ? 'pointer' : 'not-allowed' }}
+                    >
+                        <Send size={18} /> Reveal Answer
+                    </button>
+                ) : (
+                    <button 
+                        onClick={handleNext}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', borderRadius: '12px', background: '#22C55E', color: 'white', fontWeight: '700', border: 'none', cursor: 'pointer' }}
+                    >
+                        Next Clip <ChevronRight size={18} />
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
 
 export default function Listening() {
     const [questions, setQuestions] = useState([])
@@ -24,6 +177,8 @@ export default function Listening() {
     });
     const [showPopup, setShowPopup] = useState(false);
     const [showRules, setShowRules] = useState(false);
+    const [activeTab, setActiveTab] = useState('practice'); // 'practice' | 'trainer'
+    const [trainerMode, setTrainerMode] = useState(null); // null | 'sprint' | 'dictation'
 
     useEffect(() => {
         localStorage.setItem('neuraLingua_completed_listening', JSON.stringify(completedQuestions));
@@ -252,6 +407,55 @@ export default function Listening() {
                         Instructions
                     </button>
 
+                    {/* Tab Navigation */}
+                    <div style={{
+                        display: 'flex',
+                        backgroundColor: 'white',
+                        padding: '4px',
+                        borderRadius: '12px',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                        border: '1px solid #E5E7EB',
+                    }}>
+                        <button
+                            onClick={() => { setActiveTab('practice'); setTrainerMode(null); }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 16px',
+                                borderRadius: '8px',
+                                border: 'none',
+                                backgroundColor: activeTab === 'practice' ? '#22C55E' : 'transparent',
+                                color: activeTab === 'practice' ? 'white' : '#6B7280',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <Headphones size={16} /> Practice
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('trainer')}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 16px',
+                                borderRadius: '8px',
+                                border: 'none',
+                                backgroundColor: activeTab === 'trainer' ? '#22C55E' : 'transparent',
+                                color: activeTab === 'trainer' ? 'white' : '#6B7280',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <Dumbbell size={16} /> Trainer
+                        </button>
+                    </div>
+
                     {/* Score */}
                 <div style={{
                     display: 'flex',
@@ -274,426 +478,465 @@ export default function Listening() {
 
             {/* Progress Bar moved into sidebar or kept above? Let's keep it above for consistency or put it in content. */}
             
-            <div className="grid-sidebar">
-                {/* Questions Sidebar */}
-                <div style={{
-                    backgroundColor: 'white',
-                    borderRadius: '16px',
-                    padding: '20px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    height: 'fit-content',
-                }}>
-                    <h3 style={{
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#6B7280',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        marginBottom: '16px',
-                    }}>
-                        Questions
-                    </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {questions.map((q, idx) => (
-                            <motion.button
-                                key={q.id || idx}
-                                onClick={() => setCurrentIndex(idx)}
-                                whileHover={{ x: 4 }}
-                                style={{
-                                    padding: '12px 16px',
-                                    borderRadius: '10px',
-                                    border: 'none',
-                                    backgroundColor: currentIndex === idx ? '#F0FDF4' : 'transparent',
-                                    borderLeft: currentIndex === idx ? '3px solid #22C55E' : '3px solid transparent',
-                                    cursor: 'pointer',
-                                    textAlign: 'left',
-                                }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ flex: 1 }}>
-                                        <p style={{
-                                            fontSize: '14px',
-                                            fontWeight: currentIndex === idx ? '600' : '500',
-                                            color: currentIndex === idx ? '#166534' : '#374151',
-                                            margin: 0,
-                                            whiteSpace: 'nowrap',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            maxWidth: '180px'
-                                        }}>
-                                            {q.title || `Question ${idx + 1}`}
-                                        </p>
-                                    </div>
-                                    {completedQuestions.includes(idx) && (
-                                        <Check size={14} style={{ color: '#22C55E' }} />
-                                    )}
-                                </div>
-                            </motion.button>
-                        ))}
-                    </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    {/* Progress Bar inside content area */}
-                    <div style={{
-                        backgroundColor: 'white',
-                        borderRadius: '12px',
-                        padding: '16px 20px',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    }}>
+            <AnimatePresence mode="wait">
+                {activeTab === 'practice' ? (
+                    <motion.div
+                        key="practice"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="grid-sidebar"
+                    >
+                        {/* Questions Sidebar */}
                         <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            marginBottom: '10px',
+                            backgroundColor: 'white',
+                            borderRadius: '16px',
+                            padding: '20px',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                            height: 'fit-content',
                         }}>
-                            <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
-                                Question {currentIndex + 1} of {questions.length}
-                                {completedQuestions.includes(currentIndex) && <Check size={16} style={{ color: '#22C55E', marginLeft: '8px' }} />}
-                            </span>
-                            <span style={{ fontSize: '14px', color: '#6B7280' }}>
-                                {Math.round(questionProgress)}%
-                            </span>
-                        </div>
-                        <div style={{
-                            height: '6px',
-                            backgroundColor: '#E5E7EB',
-                            borderRadius: '3px',
-                            overflow: 'hidden',
-                        }}>
-                            <motion.div
-                                animate={{ width: `${questionProgress}%` }}
-                                style={{
-                                    height: '100%',
-                                    background: 'linear-gradient(90deg, #22C55E 0%, #4ADE80 100%)',
-                                    borderRadius: '3px',
-                                }}
-                            />
-                        </div>
-                    </div>
-
-            <motion.div
-                key={currentIndex}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{
-                    backgroundColor: 'white',
-                    borderRadius: '16px',
-                    overflow: 'hidden',
-                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
-                }}
-            >
-                {/* Audio Player */}
-                <div style={{
-                    background: 'linear-gradient(135deg, #166534 0%, #22C55E 100%)',
-                    padding: '32px',
-                }}>
-                    {/* Hidden real audio element */}
-                    {currentQuestion.audio_data && (
-                        <audio
-                            ref={audioRef}
-                            src={currentQuestion.audio_data}
-                            onTimeUpdate={handleAudioTimeUpdate}
-                            onLoadedMetadata={handleAudioLoaded}
-                            onEnded={handleAudioEnded}
-                            muted={isMuted}
-                        />
-                    )}
-
-                    {/* Track label */}
-                    <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.8)', fontSize: '13px', marginBottom: '16px', margin: '0 0 16px' }}>
-                        {currentQuestion.audio_data ? '🎵 ' + (currentQuestion.title || 'Listening Exercise') : '📝 Read the passage below carefully'}
-                    </p>
-
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '24px',
-                        marginBottom: '24px',
-                    }}>
-                        <button
-                            onClick={() => setIsMuted(!isMuted)}
-                            disabled={!currentQuestion.audio_data}
-                            style={{
-                                width: '48px',
-                                height: '48px',
-                                borderRadius: '50%',
-                                border: 'none',
-                                backgroundColor: 'rgba(255,255,255,0.2)',
-                                cursor: currentQuestion.audio_data ? 'pointer' : 'default',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'white',
-                                opacity: currentQuestion.audio_data ? 1 : 0.4,
-                            }}
-                        >
-                            {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                        </button>
-
-                        <motion.button
-                            onClick={handlePlayPause}
-                            disabled={!currentQuestion.audio_data}
-                            whileHover={currentQuestion.audio_data ? { scale: 1.05 } : {}}
-                            whileTap={currentQuestion.audio_data ? { scale: 0.95 } : {}}
-                            style={{
-                                width: '72px',
-                                height: '72px',
-                                borderRadius: '50%',
-                                border: 'none',
-                                backgroundColor: 'white',
-                                cursor: currentQuestion.audio_data ? 'pointer' : 'default',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
-                                opacity: currentQuestion.audio_data ? 1 : 0.5,
-                            }}
-                        >
-                            {isPlaying ? (
-                                <Pause size={32} style={{ color: '#166534' }} />
-                            ) : (
-                                <Play size={32} style={{ color: '#166534', marginLeft: '4px' }} />
-                            )}
-                        </motion.button>
-
-                        <div style={{ width: '48px' }} />
-                    </div>
-
-                    {/* Progress Slider */}
-                    <div style={{ marginBottom: '12px' }}>
-                        <div style={{
-                            height: '6px',
-                            backgroundColor: 'rgba(255,255,255,0.3)',
-                            borderRadius: '3px',
-                            overflow: 'hidden',
-                        }}>
-                            <motion.div
-                                animate={{ width: `${progress}%` }}
-                                style={{
-                                    height: '100%',
-                                    backgroundColor: 'white',
-                                    borderRadius: '3px',
-                                }}
-                            />
-                        </div>
-                    </div>
-
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        color: 'rgba(255,255,255,0.9)',
-                        fontSize: '13px',
-                    }}>
-                        <span>{formatTime(currentTime)}</span>
-                        <span>{duration > 0 ? formatTime(duration) : '--:--'}</span>
-                    </div>
-                </div>
-
-                {/* Main Content */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '32px' }}>
-                    {/* Prompt Card */}
-                    {currentQuestion && (
-                        <motion.div
-                            key={`prompt-${currentQuestion.id}`}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                        >
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                justifyContent: 'space-between',
+                            <h3 style={{
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                color: '#6B7280',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
                                 marginBottom: '16px',
-                                flexWrap: 'wrap',
-                                gap: '12px'
                             }}>
-                                <h2 style={{
-                                    fontSize: '20px',
-                                    fontWeight: '600',
-                                    color: '#111827',
-                                    margin: 0,
-                                }}>
-                                    {currentQuestion.title}
-                                </h2>
+                                Questions
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {questions.map((q, idx) => (
+                                    <motion.button
+                                        key={q.id || idx}
+                                        onClick={() => setCurrentIndex(idx)}
+                                        whileHover={{ x: 4 }}
+                                        style={{
+                                            padding: '12px 16px',
+                                            borderRadius: '10px',
+                                            border: 'none',
+                                            backgroundColor: currentIndex === idx ? '#F0FDF4' : 'transparent',
+                                            borderLeft: currentIndex === idx ? '3px solid #22C55E' : '3px solid transparent',
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ flex: 1 }}>
+                                                <p style={{
+                                                    fontSize: '14px',
+                                                    fontWeight: currentIndex === idx ? '600' : '500',
+                                                    color: currentIndex === idx ? '#166534' : '#374151',
+                                                    margin: 0,
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    maxWidth: '180px'
+                                                }}>
+                                                    {q.title || `Question ${idx + 1}`}
+                                                </p>
+                                            </div>
+                                            {completedQuestions.includes(idx) && (
+                                                <Check size={14} style={{ color: '#22C55E' }} />
+                                            )}
+                                        </div>
+                                    </motion.button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            {/* Progress Bar inside content area */}
+                            <div style={{
+                                backgroundColor: 'white',
+                                borderRadius: '12px',
+                                padding: '16px 20px',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                            }}>
                                 <div style={{
                                     display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    padding: '6px 12px',
-                                    backgroundColor: '#F0FDF4',
-                                    borderRadius: '20px',
+                                    justifyContent: 'space-between',
+                                    marginBottom: '10px',
                                 }}>
-                                    <Headphones size={14} style={{ color: '#22C55E' }} />
-                                    <span style={{ fontSize: '13px', color: '#166534', fontWeight: '500' }}>
-                                        Listening
+                                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                                        Question {currentIndex + 1} of {questions.length}
+                                        {completedQuestions.includes(currentIndex) && <Check size={16} style={{ color: '#22C55E', marginLeft: '8px' }} />}
+                                    </span>
+                                    <span style={{ fontSize: '14px', color: '#6B7280' }}>
+                                        {Math.round(questionProgress)}%
                                     </span>
                                 </div>
+                                <div style={{
+                                    height: '6px',
+                                    backgroundColor: '#E5E7EB',
+                                    borderRadius: '3px',
+                                    overflow: 'hidden',
+                                }}>
+                                    <motion.div
+                                        animate={{ width: `${questionProgress}%` }}
+                                        style={{
+                                            height: '100%',
+                                            background: 'linear-gradient(90deg, #22C55E 0%, #4ADE80 100%)',
+                                            borderRadius: '3px',
+                                        }}
+                                    />
+                                </div>
                             </div>
-                            <p style={{
-                                fontSize: '15px',
-                                color: '#4B5563',
-                                lineHeight: '1.6',
-                                margin: 0,
-                            }}>
-                                {currentQuestion.content}
-                            </p>
-                        </motion.div>
-                    )}
 
-
-
-                    {/* Answer Options */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-                        {currentQuestion.options?.map((option, idx) => {
-                            const isSelected = selectedAnswer === option.value
-                            const isCorrectOption = option.value === currentQuestion.correct_answer
-                            const showCorrect = showResult && isCorrectOption
-                            const showWrong = showResult && isSelected && !isCorrectOption
-
-                            return (
-                                <motion.button
-                                    key={idx}
-                                    onClick={() => handleSelectAnswer(option.value)}
-                                    whileHover={!showResult ? { scale: 1.01, x: 4 } : {}}
-                                    style={{
-                                        width: '100%',
-                                        padding: '16px 20px',
-                                        borderRadius: '12px',
-                                        border: '2px solid',
-                                        borderColor: showCorrect ? '#22C55E'
-                                            : showWrong ? '#EF4444'
-                                                : isSelected ? '#3B82F6'
-                                                    : '#E5E7EB',
-                                        backgroundColor: showCorrect ? '#F0FDF4'
-                                            : showWrong ? '#FEF2F2'
-                                                : isSelected ? '#EFF6FF'
-                                                    : 'white',
-                                        cursor: showResult ? 'default' : 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        textAlign: 'left',
-                                        transition: 'all 0.2s',
-                                    }}
-                                >
-                                    <span style={{
-                                        fontSize: '15px',
-                                        fontWeight: isSelected ? '500' : '400',
-                                        color: '#1F2937',
-                                    }}>
-                                        {option.text}
-                                    </span>
-                                    {showResult && (
-                                        <>
-                                            {showCorrect && <Check size={20} style={{ color: '#22C55E' }} />}
-                                            {showWrong && <X size={20} style={{ color: '#EF4444' }} />}
-                                        </>
-                                    )}
-                                </motion.button>
-                            )
-                        })}
-                    </div>
-
-                    {/* Result Feedback */}
-                    <AnimatePresence>
-                        {showResult && (
                             <motion.div
-                                initial={{ opacity: 0, y: 10 }}
+                                key={currentIndex}
+                                initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 style={{
-                                    padding: '16px 20px',
-                                    borderRadius: '12px',
-                                    backgroundColor: isCorrect ? '#F0FDF4' : '#FEF2F2',
-                                    borderLeft: `4px solid ${isCorrect ? '#22C55E' : '#EF4444'}`,
-                                    marginBottom: '24px',
+                                    backgroundColor: 'white',
+                                    borderRadius: '16px',
+                                    overflow: 'hidden',
+                                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
                                 }}
                             >
-                                <p style={{
-                                    fontSize: '15px',
-                                    fontWeight: '600',
-                                    color: isCorrect ? '#166534' : '#991B1B',
-                                    margin: 0,
+                                {/* Audio Player */}
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #166534 0%, #22C55E 100%)',
+                                    padding: '32px',
                                 }}>
-                                    {isCorrect ? '🎉 Correct! Well done!' : '❌ Incorrect. The right answer is highlighted above.'}
-                                </p>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                    {/* Hidden real audio element */}
+                                    {currentQuestion.audio_data && (
+                                        <audio
+                                            ref={audioRef}
+                                            src={currentQuestion.audio_data}
+                                            onTimeUpdate={handleAudioTimeUpdate}
+                                            onLoadedMetadata={handleAudioLoaded}
+                                            onEnded={handleAudioEnded}
+                                            muted={isMuted}
+                                        />
+                                    )}
 
-                    {/* Actions */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                        {!showResult ? (
-                            <button
-                                onClick={handleSubmit}
-                                disabled={!selectedAnswer}
-                                style={{
-                                    padding: '14px 32px',
-                                    borderRadius: '10px',
-                                    border: 'none',
-                                    background: selectedAnswer
-                                        ? 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)'
-                                        : '#E5E7EB',
-                                    color: selectedAnswer ? 'white' : '#9CA3AF',
-                                    fontSize: '15px',
-                                    fontWeight: '600',
-                                    cursor: selectedAnswer ? 'pointer' : 'not-allowed',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    boxShadow: selectedAnswer ? '0 4px 14px rgba(59, 130, 246, 0.4)' : 'none',
-                                }}
-                            >
-                                <Check size={18} />
-                                Submit Answer
-                            </button>
-                        ) : currentIndex < questions.length - 1 ? (
-                            <button
-                                onClick={handleNext}
-                                style={{
-                                    padding: '14px 32px',
-                                    borderRadius: '10px',
-                                    border: 'none',
-                                    background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-                                    color: 'white',
-                                    fontSize: '15px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
-                                }}
-                            >
-                                Next Question
-                                <ChevronRight size={18} />
-                            </button>
+                                    {/* Track label */}
+                                    <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.8)', fontSize: '13px', marginBottom: '16px', margin: '0 0 16px' }}>
+                                        {currentQuestion.audio_data ? '🎵 ' + (currentQuestion.title || 'Listening Exercise') : '📝 Read the passage below carefully'}
+                                    </p>
+
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '24px',
+                                        marginBottom: '24px',
+                                    }}>
+                                        <button
+                                            onClick={() => setIsMuted(!isMuted)}
+                                            disabled={!currentQuestion.audio_data}
+                                            style={{
+                                                width: '48px',
+                                                height: '48px',
+                                                borderRadius: '50%',
+                                                border: 'none',
+                                                backgroundColor: 'rgba(255,255,255,0.2)',
+                                                cursor: currentQuestion.audio_data ? 'pointer' : 'default',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: 'white',
+                                                opacity: currentQuestion.audio_data ? 1 : 0.4,
+                                            }}
+                                        >
+                                            {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                                        </button>
+
+                                        <motion.button
+                                            onClick={handlePlayPause}
+                                            disabled={!currentQuestion.audio_data}
+                                            whileHover={currentQuestion.audio_data ? { scale: 1.05 } : {}}
+                                            whileTap={currentQuestion.audio_data ? { scale: 0.95 } : {}}
+                                            style={{
+                                                width: '72px',
+                                                height: '72px',
+                                                borderRadius: '50%',
+                                                border: 'none',
+                                                backgroundColor: 'white',
+                                                cursor: currentQuestion.audio_data ? 'pointer' : 'default',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
+                                                opacity: currentQuestion.audio_data ? 1 : 0.5,
+                                            }}
+                                        >
+                                            {isPlaying ? (
+                                                <Pause size={32} style={{ color: '#166534' }} />
+                                            ) : (
+                                                <Play size={32} style={{ color: '#166534', marginLeft: '4px' }} />
+                                            )}
+                                        </motion.button>
+
+                                        <div style={{ width: '48px' }} />
+                                    </div>
+
+                                    {/* Progress Slider */}
+                                    <div style={{ marginBottom: '12px' }}>
+                                        <div style={{
+                                            height: '6px',
+                                            backgroundColor: 'rgba(255,255,255,0.3)',
+                                            borderRadius: '3px',
+                                            overflow: 'hidden',
+                                        }}>
+                                            <motion.div
+                                                animate={{ width: `${progress}%` }}
+                                                style={{
+                                                    height: '100%',
+                                                    backgroundColor: 'white',
+                                                    borderRadius: '3px',
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        color: 'rgba(255,255,255,0.9)',
+                                        fontSize: '13px',
+                                    }}>
+                                        <span>{formatTime(currentTime)}</span>
+                                        <span>{duration > 0 ? formatTime(duration) : '--:--'}</span>
+                                    </div>
+                                </div>
+
+                                {/* Main Content */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '32px' }}>
+                                    {/* Prompt Card */}
+                                    {currentQuestion && (
+                                        <motion.div
+                                            key={`prompt-${currentQuestion.id}`}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                        >
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'flex-start',
+                                                justifyContent: 'space-between',
+                                                marginBottom: '16px',
+                                                flexWrap: 'wrap',
+                                                gap: '12px'
+                                            }}>
+                                                <h2 style={{
+                                                    fontSize: '20px',
+                                                    fontWeight: '600',
+                                                    color: '#111827',
+                                                    margin: 0,
+                                                }}>
+                                                    {currentQuestion.title}
+                                                </h2>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    padding: '6px 12px',
+                                                    backgroundColor: '#F0FDF4',
+                                                    borderRadius: '20px',
+                                                }}>
+                                                    <Headphones size={14} style={{ color: '#22C55E' }} />
+                                                    <span style={{ fontSize: '13px', color: '#166534', fontWeight: '500' }}>
+                                                        Listening
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <p style={{
+                                                fontSize: '15px',
+                                                color: '#4B5563',
+                                                lineHeight: '1.6',
+                                                margin: 0,
+                                            }}>
+                                                {currentQuestion.content}
+                                            </p>
+                                        </motion.div>
+                                    )}
+
+                                    {/* Answer Options */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+                                        {currentQuestion.options?.map((option, idx) => {
+                                            const isSelected = selectedAnswer === option.value
+                                            const isCorrectOption = option.value === currentQuestion.correct_answer
+                                            const showCorrect = showResult && isCorrectOption
+                                            const showWrong = showResult && isSelected && !isCorrectOption
+
+                                            return (
+                                                <motion.button
+                                                    key={idx}
+                                                    onClick={() => handleSelectAnswer(option.value)}
+                                                    whileHover={!showResult ? { scale: 1.01, x: 4 } : {}}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '16px 20px',
+                                                        borderRadius: '12px',
+                                                        border: '2px solid',
+                                                        borderColor: showCorrect ? '#22C55E'
+                                                            : showWrong ? '#EF4444'
+                                                                : isSelected ? '#3B82F6'
+                                                                    : '#E5E7EB',
+                                                        backgroundColor: showCorrect ? '#F0FDF4'
+                                                            : showWrong ? '#FEF2F2'
+                                                                : isSelected ? '#EFF6FF'
+                                                                    : 'white',
+                                                        cursor: showResult ? 'default' : 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        textAlign: 'left',
+                                                        transition: 'all 0.2s',
+                                                    }}
+                                                >
+                                                    <span style={{
+                                                        fontSize: '15px',
+                                                        fontWeight: isSelected ? '500' : '400',
+                                                        color: '#1F2937',
+                                                    }}>
+                                                        {option.text}
+                                                    </span>
+                                                    {showResult && (
+                                                        <>
+                                                            {showCorrect && <Check size={20} style={{ color: '#22C55E' }} />}
+                                                            {showWrong && <X size={20} style={{ color: '#EF4444' }} />}
+                                                        </>
+                                                    )}
+                                                </motion.button>
+                                            )
+                                        })}
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                                        {!showResult ? (
+                                            <button
+                                                onClick={handleSubmit}
+                                                disabled={!selectedAnswer}
+                                                style={{
+                                                    padding: '14px 32px',
+                                                    borderRadius: '10px',
+                                                    border: 'none',
+                                                    background: selectedAnswer
+                                                        ? 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)'
+                                                        : '#E5E7EB',
+                                                    color: selectedAnswer ? 'white' : '#9CA3AF',
+                                                    fontSize: '15px',
+                                                    fontWeight: '600',
+                                                    cursor: selectedAnswer ? 'pointer' : 'not-allowed',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    boxShadow: selectedAnswer ? '0 4px 14px rgba(59, 130, 246, 0.4)' : 'none',
+                                                }}
+                                            >
+                                                <Check size={18} />
+                                                Submit Answer
+                                            </button>
+                                        ) : currentIndex < questions.length - 1 ? (
+                                            <button
+                                                onClick={handleNext}
+                                                style={{
+                                                    padding: '14px 32px',
+                                                    borderRadius: '10px',
+                                                    border: 'none',
+                                                    background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                                                    color: 'white',
+                                                    fontSize: '15px',
+                                                    fontWeight: '600',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
+                                                }}
+                                            >
+                                                Next Question
+                                                <ChevronRight size={18} />
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => setShowPopup(true)}
+                                                style={{
+                                                    padding: '14px 32px',
+                                                    borderRadius: '10px',
+                                                    border: 'none',
+                                                    background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                                                    color: 'white',
+                                                    fontSize: '15px',
+                                                    fontWeight: '600',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    boxShadow: '0 4px 14px rgba(34, 197, 94, 0.4)',
+                                                }}
+                                            >
+                                                <Award size={18} />
+                                                Final Submit
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="trainer"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        style={{
+                            backgroundColor: 'white',
+                            borderRadius: '16px',
+                            padding: '32px',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                            minHeight: '400px'
+                        }}
+                    >
+                        {!trainerMode ? (
+                            <div>
+                                <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#111827', margin: '0 0 8px' }}>Listening Trainer</h2>
+                                <p style={{ color: '#6B7280', marginBottom: '32px' }}>Sharpen your ears with specialized drills.</p>
+                                
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                                    <motion.button
+                                        whileHover={{ y: -4, boxShadow: '0 12px 24px rgba(34, 197, 94, 0.15)' }}
+                                        onClick={() => setTrainerMode('sprint')}
+                                        style={{
+                                            padding: '32px', textAlign: 'left', borderRadius: '20px', border: '2px solid #F3F4F6',
+                                            backgroundColor: 'white', cursor: 'pointer'
+                                        }}
+                                    >
+                                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                                            <Zap size={24} style={{ color: '#22C55E' }} />
+                                        </div>
+                                        <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: '0 0 8px' }}>Audio Sprint</h3>
+                                        <p style={{ fontSize: '14px', color: '#6B7280', margin: 0, lineHeight: '1.5' }}>Rapid-fire listening challenges to improve quick comprehension.</p>
+                                    </motion.button>
+
+                                    <motion.button
+                                        whileHover={{ y: -4, boxShadow: '0 12px 24px rgba(34, 197, 94, 0.15)' }}
+                                        onClick={() => setTrainerMode('dictation')}
+                                        style={{
+                                            padding: '32px', textAlign: 'left', borderRadius: '20px', border: '2px solid #F3F4F6',
+                                            backgroundColor: 'white', cursor: 'pointer'
+                                        }}
+                                    >
+                                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                                            <Award size={24} style={{ color: '#22C55E' }} />
+                                        </div>
+                                        <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: '0 0 8px' }}>Dictation Mode</h3>
+                                        <p style={{ fontSize: '14px', color: '#6B7280', margin: 0, lineHeight: '1.5' }}>Listen and type exactly what you hear to perfect your details.</p>
+                                    </motion.button>
+                                </div>
+                            </div>
+                        ) : trainerMode === 'sprint' ? (
+                            <AudioSprint questions={questions} onBack={() => setTrainerMode(null)} />
                         ) : (
-                            <button
-                                onClick={() => setShowPopup(true)}
-                                style={{
-                                    padding: '14px 32px',
-                                    borderRadius: '10px',
-                                    border: 'none',
-                                    background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-                                    color: 'white',
-                                    fontSize: '15px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    boxShadow: '0 4px 14px rgba(34, 197, 94, 0.4)',
-                                }}
-                            >
-                                <Award size={18} />
-                                Final Submit
-                            </button>
+                            <ListeningDictation questions={questions} onBack={() => setTrainerMode(null)} />
                         )}
-                    </div>
-                </div>
-            </motion.div>
-        </div>
-    </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Completion Popup */}
             <AnimatePresence>
