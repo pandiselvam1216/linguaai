@@ -161,7 +161,7 @@ export default function Listening() {
                     width: '48px',
                     height: '48px',
                     border: '4px solid #E5E7EB',
-                    borderTop: '4px solid #3B82F6',
+                    borderTop: '4px solid #22C55E',
                     borderRadius: '50%',
                     animation: 'spin 1s linear infinite',
                 }} />
@@ -202,34 +202,33 @@ export default function Listening() {
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
+                gap: '16px',
                 marginBottom: '24px',
                 flexWrap: 'wrap',
-                gap: '12px',
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}>
-                        <Headphones size={24} style={{ color: 'white' }} />
-                    </div>
-                    <div>
-                        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>
-                            Listening Practice
-                        </h1>
-                        <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
-                            Improve your audio comprehension skills
-                        </p>
-                    </div>
+                <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #22C55E 0%, #4ADE80 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                }}>
+                    <Headphones size={24} style={{ color: 'white' }} />
                 </div>
+                <div>
+                    <h1 style={{ fontWeight: '700', color: '#111827', margin: 0 }}>
+                        Listening Practice
+                    </h1>
+                    <p style={{ color: '#6B7280', margin: 0 }}>
+                        Improve your audio comprehension skills
+                    </p>
+                </div>
+            </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
                     {/* Instructions Button */}
                     <button
                         onClick={() => setShowRules(true)}
@@ -270,7 +269,6 @@ export default function Listening() {
                         <p style={{ fontSize: '12px', color: '#6B7280', margin: 0 }}>Correct</p>
                     </div>
                 </div>
-                </div>
             </div>
 
             {/* Progress Bar */}
@@ -304,7 +302,7 @@ export default function Listening() {
                         animate={{ width: `${questionProgress}% ` }}
                         style={{
                             height: '100%',
-                            background: 'linear-gradient(90deg, #3B82F6 0%, #60A5FA 100%)',
+                            background: 'linear-gradient(90deg, #22C55E 0%, #4ADE80 100%)',
                             borderRadius: '3px',
                         }}
                     />
@@ -325,7 +323,7 @@ export default function Listening() {
             >
                 {/* Audio Player */}
                 <div style={{
-                    background: 'linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%)',
+                    background: 'linear-gradient(135deg, #166534 0%, #22C55E 100%)',
                     padding: '32px',
                 }}>
                     {/* Hidden real audio element */}
@@ -392,9 +390,9 @@ export default function Listening() {
                             }}
                         >
                             {isPlaying ? (
-                                <Pause size={32} style={{ color: '#1E40AF' }} />
+                                <Pause size={32} style={{ color: '#166534' }} />
                             ) : (
-                                <Play size={32} style={{ color: '#1E40AF', marginLeft: '4px' }} />
+                                <Play size={32} style={{ color: '#166534', marginLeft: '4px' }} />
                             )}
                         </motion.button>
 
@@ -461,11 +459,11 @@ export default function Listening() {
                                     alignItems: 'center',
                                     gap: '6px',
                                     padding: '6px 12px',
-                                    backgroundColor: '#EFF6FF',
+                                    backgroundColor: '#F0FDF4',
                                     borderRadius: '20px',
                                 }}>
-                                    <Headphones size={14} style={{ color: '#3B82F6' }} />
-                                    <span style={{ fontSize: '13px', color: '#1E40AF', fontWeight: '500' }}>
+                                    <Headphones size={14} style={{ color: '#22C55E' }} />
+                                    <span style={{ fontSize: '13px', color: '#166534', fontWeight: '500' }}>
                                         Listening
                                     </span>
                                 </div>

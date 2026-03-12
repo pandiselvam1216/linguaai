@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { PenTool, Send, Clock, CheckCircle, ChevronRight, XCircle, Award, RotateCcw, AlertCircle, Info } from 'lucide-react'
+import { PenTool, Send, Clock, CheckCircle, ChevronRight, XCircle, Award, RotateCcw, AlertCircle, Info, FileText, Sparkles } from 'lucide-react'
 import api from '../../services/api'
 import { getModuleQuestions } from '../../services/questionService'
 import { evaluateWriting, saveModuleScore } from '../../utils/localScoring'
@@ -128,7 +128,7 @@ export default function Writing() {
                     width: '48px',
                     height: '48px',
                     border: '4px solid #E5E7EB',
-                    borderTop: '4px solid #F97316',
+                    borderTop: '4px solid #22C55E',
                     borderRadius: '50%',
                     animation: 'spin 1s linear infinite',
                 }} />
@@ -167,58 +167,56 @@ export default function Writing() {
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
+                gap: '16px',
                 marginBottom: '24px',
                 flexWrap: 'wrap',
-                gap: '12px',
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                    <div style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #F97316 0%, #FB923C 100%)',
+                <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #22C55E 0%, #4ADE80 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                }}>
+                    <PenTool size={24} style={{ color: 'white' }} />
+                </div>
+                <div>
+                    <h1 style={{ fontWeight: '700', color: '#111827', margin: 0 }}>
+                        Writing Practice
+                    </h1>
+                    <p style={{ color: '#6B7280', margin: 0 }}>
+                        Develop your essay writing skills with AI feedback
+                    </p>
+                </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
+                {/* Instructions Button */}
+                <button
+                    onClick={() => setShowRules(true)}
+                    style={{
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                    }}>
-                        <PenTool size={24} style={{ color: 'white' }} />
-                    </div>
-                    <div>
-                        <h1 style={{ fontWeight: '700', color: '#111827', margin: 0 }}>
-                            Writing Practice
-                        </h1>
-                        <p style={{ color: '#6B7280', margin: 0 }}>
-                            Develop your essay writing skills with AI feedback
-                        </p>
-                    </div>
-                </div>
+                        gap: '6px',
+                        padding: '10px 16px',
+                        backgroundColor: 'white',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '10px',
+                        color: '#4B5563',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                    }}
+                >
+                    <Info size={16} />
+                    Instructions
+                </button>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                    {/* Instructions Button */}
-                    <button
-                        onClick={() => setShowRules(true)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '10px 16px',
-                            backgroundColor: 'white',
-                            border: '1px solid #E5E7EB',
-                            borderRadius: '10px',
-                            color: '#4B5563',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                        }}
-                    >
-                        <Info size={16} />
-                        Instructions
-                    </button>
-
-                    {/* Timer */}
+                {/* Timer */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -228,16 +226,15 @@ export default function Writing() {
                     borderRadius: '10px',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 }}>
-                    <Clock size={18} style={{ color: '#6B7280' }} />
+                    <Clock size={16} style={{ color: '#6B7280' }} />
                     <span style={{
-                        fontSize: '16px',
-                        fontWeight: '500',
+                        fontSize: '14px',
+                        fontWeight: '600',
                         color: '#111827',
                         fontFamily: 'monospace',
                     }}>
                         {formatTime(timeElapsed)}
                     </span>
-                </div>
                 </div>
             </div>
 
@@ -258,7 +255,7 @@ export default function Writing() {
                         letterSpacing: '0.05em',
                         marginBottom: '16px',
                     }}>
-                        Essay Topics
+                        Topics
                     </h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {prompts.map((prompt) => (
@@ -270,8 +267,8 @@ export default function Writing() {
                                     padding: '14px 16px',
                                     borderRadius: '10px',
                                     border: 'none',
-                                    backgroundColor: selectedPrompt?.id === prompt.id ? '#FFF7ED' : 'transparent',
-                                    borderLeft: selectedPrompt?.id === prompt.id ? '3px solid #F97316' : '3px solid transparent',
+                                    backgroundColor: selectedPrompt?.id === prompt.id ? '#F0FDF4' : 'transparent',
+                                    borderLeft: selectedPrompt?.id === prompt.id ? '3px solid #22C55E' : '3px solid transparent',
                                     cursor: 'pointer',
                                     textAlign: 'left',
                                 }}
@@ -279,7 +276,7 @@ export default function Writing() {
                                 <p style={{
                                     fontSize: '14px',
                                     fontWeight: selectedPrompt?.id === prompt.id ? '600' : '500',
-                                    color: selectedPrompt?.id === prompt.id ? '#C2410C' : '#374151',
+                                    color: selectedPrompt?.id === prompt.id ? '#166534' : '#374151',
                                     margin: 0,
                                     marginBottom: '4px',
                                 }}>
@@ -301,35 +298,43 @@ export default function Writing() {
                 </div>
 
                 {/* Main Content */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '32px' }}>
                     {/* Prompt Card */}
                     {selectedPrompt && (
                         <motion.div
                             key={selectedPrompt.id}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            style={{
-                                backgroundColor: 'white',
-                                borderRadius: '16px',
-                                padding: '24px',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                            }}
                         >
                             <div style={{
                                 display: 'flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                                marginBottom: '12px',
+                                alignItems: 'flex-start',
+                                justifyContent: 'space-between',
+                                marginBottom: '16px',
+                                flexWrap: 'wrap',
+                                gap: '12px'
                             }}>
-                                <FileText size={18} style={{ color: '#F97316' }} />
                                 <h2 style={{
-                                    fontSize: '18px',
+                                    fontSize: '20px',
                                     fontWeight: '600',
                                     color: '#111827',
                                     margin: 0,
                                 }}>
                                     {selectedPrompt.title}
                                 </h2>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    padding: '6px 12px',
+                                    backgroundColor: '#F0FDF4',
+                                    borderRadius: '20px',
+                                }}>
+                                    <FileText size={14} style={{ color: '#22C55E' }} />
+                                    <span style={{ fontSize: '13px', color: '#166534', fontWeight: '500' }}>
+                                        {selectedPrompt.word_limit || minWords} words limit
+                                    </span>
+                                </div>
                             </div>
                             <p style={{
                                 fontSize: '15px',
@@ -344,15 +349,12 @@ export default function Writing() {
 
                     {/* Writing Area */}
                     <div style={{
-                        backgroundColor: 'white',
                         borderRadius: '16px',
                         overflow: 'hidden',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                     }}>
                         {/* Word Count Bar */}
                         <div style={{
-                            padding: '16px 24px',
-                            borderBottom: '1px solid #F3F4F6',
+                            padding: '16px 0',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
@@ -417,7 +419,7 @@ export default function Writing() {
                         </div>
 
                         {/* Textarea */}
-                        <div style={{ padding: '24px' }}>
+                        <div style={{ padding: '0 0 24px 0' }}>
                             <textarea
                                 value={essay}
                                 onChange={(e) => setEssay(e.target.value)}
@@ -436,9 +438,10 @@ export default function Writing() {
                                     resize: 'vertical',
                                     fontFamily: 'inherit',
                                     transition: 'all 0.2s',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
                                 }}
                                 onFocus={(e) => {
-                                    if (!feedback) e.target.style.borderColor = '#F97316'
+                                    if (!feedback) e.target.style.borderColor = '#22C55E'
                                 }}
                                 onBlur={(e) => {
                                     if (!feedback) e.target.style.borderColor = '#E5E7EB'
@@ -448,8 +451,7 @@ export default function Writing() {
 
                         {/* Actions */}
                         <div style={{
-                            padding: '16px 24px',
-                            borderTop: '1px solid #F3F4F6',
+                            padding: '0',
                             display: 'flex',
                             justifyContent: 'flex-end',
                             gap: '12px',
@@ -484,7 +486,7 @@ export default function Writing() {
                                     borderRadius: '10px',
                                     border: 'none',
                                     background: (wordCount >= minWords && !feedback)
-                                        ? 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)'
+                                        ? 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)'
                                         : '#E5E7EB',
                                     color: (wordCount >= minWords && !feedback) ? 'white' : '#9CA3AF',
                                     fontSize: '14px',
@@ -493,7 +495,7 @@ export default function Writing() {
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px',
-                                    boxShadow: (wordCount >= minWords && !feedback) ? '0 4px 14px rgba(249, 115, 22, 0.4)' : 'none',
+                                    boxShadow: (wordCount >= minWords && !feedback) ? '0 4px 14px rgba(34, 197, 94, 0.4)' : 'none',
                                 }}
                             >
                                 {submitting ? (
@@ -554,7 +556,7 @@ export default function Writing() {
                                         alignItems: 'center',
                                         gap: '10px',
                                     }}>
-                                        <Sparkles size={20} style={{ color: '#F97316' }} />
+                                        <Sparkles size={20} style={{ color: '#22C55E' }} />
                                         <h3 style={{
                                             fontSize: '18px',
                                             fontWeight: '600',
@@ -596,7 +598,7 @@ export default function Writing() {
                                                 gap: '8px',
                                                 marginBottom: '8px',
                                             }}>
-                                                <CheckCircle size={16} style={{ color: '#F97316' }} />
+                                                <CheckCircle size={16} style={{ color: '#22C55E' }} />
                                                 <span style={{
                                                     fontSize: '14px',
                                                     fontWeight: '600',
@@ -691,7 +693,7 @@ export default function Writing() {
                                 width: '80px',
                                 height: '80px',
                                 borderRadius: '50%',
-                                background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
+                                background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -715,7 +717,7 @@ export default function Writing() {
                                 borderRadius: '16px',
                             }}>
                                 <p style={{ fontSize: '14px', color: '#64748B', marginBottom: '4px' }}>Draft Score</p>
-                                <p style={{ fontSize: '36px', fontWeight: '800', color: '#F97316', margin: 0 }}>
+                                <p style={{ fontSize: '36px', fontWeight: '800', color: '#22C55E', margin: 0 }}>
                                     {feedback?.score || 0}%
                                 </p>
                             </div>
@@ -750,7 +752,7 @@ export default function Writing() {
                                         padding: '14px',
                                         borderRadius: '12px',
                                         border: 'none',
-                                        background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
+                                        background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
                                         color: 'white',
                                         fontWeight: '600',
                                         cursor: 'pointer',
@@ -764,8 +766,8 @@ export default function Writing() {
                                         padding: '14px',
                                         borderRadius: '12px',
                                         border: 'none',
-                                        background: '#F1F5F9',
-                                        color: '#475569',
+                                        background: (prompts.findIndex(p => p.id === selectedPrompt?.id) < prompts.length - 1) ? '#F3F4F6' : 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                                        color: (prompts.findIndex(p => p.id === selectedPrompt?.id) < prompts.length - 1) ? '#374151' : 'white',
                                         fontWeight: '600',
                                         cursor: 'pointer',
                                     }}

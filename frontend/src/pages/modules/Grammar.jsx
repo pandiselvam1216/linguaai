@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Star, CheckCircle, Info, CheckSquare } from 'lucide-react'
+import { Star, CheckCircle, Info, CheckSquare, Check, X, ChevronRight, Award } from 'lucide-react'
 import { getModuleQuestions } from '../../services/questionService'
 import { saveModuleScore } from '../../utils/localScoring'
 import ModuleRulesModal from '../../components/common/ModuleRulesModal'
