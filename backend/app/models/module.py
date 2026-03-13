@@ -77,6 +77,7 @@ class Question(db.Model):
     
     # Status
     is_active = db.Column(db.Boolean, default=True)
+    is_published = db.Column(db.Boolean, default=False)  # Published to students = visible in modules
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -97,7 +98,9 @@ class Question(db.Model):
             'difficulty': self.difficulty,
             'points': self.points,
             'time_limit': self.time_limit,
-            'tags': self.tags
+            'tags': self.tags,
+            'is_active': self.is_active,
+            'is_published': self.is_published
         }
         if include_answer:
             data['correct_answer'] = self.correct_answer

@@ -16,7 +16,7 @@ reading_bp = Blueprint('reading', __name__)
 @reading_bp.route('/passages', methods=['GET'])
 @jwt_required()
 def get_passages():
-    """Get reading passages with questions"""
+    """Get reading passages with questions - only published passages for student use"""
     difficulty = request.args.get('difficulty', type=int)
     limit = request.args.get('limit', 10, type=int)
     
@@ -24,7 +24,8 @@ def get_passages():
     if not module:
         return jsonify({'error': 'Module not found'}), 404
     
-    query = Question.query.filter_by(module_id=module.id, is_active=True)
+    # Only fetch published and active questions for students
+    query = Question.query.filter_by(module_id=module.id, is_active=True, is_published=True)
     
     if difficulty:
         query = query.filter_by(difficulty=difficulty)

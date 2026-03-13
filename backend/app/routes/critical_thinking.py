@@ -16,12 +16,13 @@ critical_thinking_bp = Blueprint('critical_thinking', __name__)
 @critical_thinking_bp.route('/prompts', methods=['GET'])
 @jwt_required()
 def get_prompts():
-    """Get JAM prompts"""
+    """Get JAM prompts - only published prompts for student use"""
     module = Module.query.filter_by(slug='critical-thinking').first()
     if not module:
         return jsonify({'error': 'Module not found'}), 404
     
-    prompts = Question.query.filter_by(module_id=module.id, is_active=True).limit(10).all()
+    # Only fetch published and active questions for students
+    prompts = Question.query.filter_by(module_id=module.id, is_active=True, is_published=True).limit(10).all()
     return jsonify({'prompts': [p.to_dict() for p in prompts]}), 200
 
 

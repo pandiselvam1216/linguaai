@@ -7,7 +7,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User, Role
 from app.models.attempt import Attempt, Score
-from app.models.module import Module
+from app.models.module import Module, Question
 from app.utils.decorators import role_required
 from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
@@ -311,3 +311,159 @@ def get_activity():
             })
     
     return jsonify({'activities': activities}), 200
+
+
+@admin_bp.route('/questions', methods=['GET'])
+@jwt_required()
+@role_required('admin')
+def get_all_questions():
+    """Get all questions (including unpublished) for admin management"""
+    module_slug = request.args.get('module')
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
+    query = Question.query.order_by(Question.created_at.desc())
+    
+    if module_slug:
+        module = Module.query.filter_by(slug=module_slug).first()
+        if not module:
+            return jsonify({'error': 'Module not found'}), 404
+        query = query.filter_by(module_id=module.id)
+    
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    return jsonify({
+        'questions': [q.to_dict(include_answer=True) for q in pagination.items],
+        'total': pagination.total,
+        'page': page,
+        'pages': pagination.pages
+    }), 200
+
+
+@admin_bp.route('/questions', methods=['POST'])
+@jwt_required()
+@role_required('admin')
+def create_question():
+    """Create a new question"""
+    data = request.get_json()
+    
+    if not data or not data.get('module_id') or not data.get('content'):
+        return jsonify({'error': 'Module ID and content are required'}), 400
+    
+    module = db.session.get(Module, data['module_id'])
+    if not module:
+        return jsonify({'error': 'Module not found'}), 404
+    
+    question = Question(
+        module_id=data['module_id'],
+        type=data.get('type', 'mcq'),
+        title=data.get('title'),
+        content=data['content'],
+        media_url=data.get('media_url'),
+        passage_text=data.get('passage_text'),
+        options=data.get('options'),
+        correct_answer=data.get('correct_answer'),
+        explanation=data.get('explanation'),
+        difficulty=data.get('difficulty', 1),
+        points=data.get('points', 10),
+        time_limit=data.get('time_limit'),
+        tags=data.get('tags'),
+        is_active=data.get('is_active', True),
+        is_published=data.get('is_published', False)  # Default to unpublished
+    )
+    
+    db.session.add(question)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Question created successfully',
+        'question': question.to_dict(include_answer=True)
+    }), 201
+
+
+@admin_bp.route('/questions/<int:question_id>', methods=['PUT'])
+@jwt_required()
+@role_required('admin')
+def update_question(question_id):
+    """Update a question"""
+    question = db.session.get(Question, question_id)
+    
+    if not question:
+        return jsonify({'error': 'Question not found'}), 404
+    
+    data = request.get_json()
+    
+    # Update fields if provided
+    if 'title' in data:
+        question.title = data['title']
+    if 'content' in data:
+        question.content = data['content']
+    if 'type' in data:
+        question.type = data['type']
+    if 'media_url' in data:
+        question.media_url = data['media_url']
+    if 'passage_text' in data:
+        question.passage_text = data['passage_text']
+    if 'options' in data:
+        question.options = data['options']
+    if 'correct_answer' in data:
+        question.correct_answer = data['correct_answer']
+    if 'explanation' in data:
+        question.explanation = data['explanation']
+    if 'difficulty' in data:
+        question.difficulty = data['difficulty']
+    if 'points' in data:
+        question.points = data['points']
+    if 'time_limit' in data:
+        question.time_limit = data['time_limit']
+    if 'tags' in data:
+        question.tags = data['tags']
+    if 'is_active' in data:
+        question.is_active = data['is_active']
+    if 'is_published' in data:
+        question.is_published = data['is_published']
+    
+    question.updated_at = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Question updated successfully',
+        'question': question.to_dict(include_answer=True)
+    }), 200
+
+
+@admin_bp.route('/questions/<int:question_id>/publish', methods=['PUT'])
+@jwt_required()
+@role_required('admin')
+def toggle_publish_question(question_id):
+    """Publish or unpublish a question"""
+    question = db.session.get(Question, question_id)
+    
+    if not question:
+        return jsonify({'error': 'Question not found'}), 404
+    
+    data = request.get_json()
+    question.is_published = data.get('is_published', not question.is_published)
+    question.updated_at = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({
+        'message': f"Question {'published' if question.is_published else 'unpublished'} successfully",
+        'question': question.to_dict(include_answer=True)
+    }), 200
+
+
+@admin_bp.route('/questions/<int:question_id>', methods=['DELETE'])
+@jwt_required()
+@role_required('admin')
+def delete_question(question_id):
+    """Delete a question"""
+    question = db.session.get(Question, question_id)
+    
+    if not question:
+        return jsonify({'error': 'Question not found'}), 404
+    
+    db.session.delete(question)
+    db.session.commit()
+    
+    return jsonify({'message': 'Question deleted successfully'}), 200

@@ -2,10 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     BookOpen, Plus, Edit2, Trash2, X, Check, Search,
-    Headphones, Mic, FileText, PenTool, CheckSquare, Upload, FileUp, Eye
+    Headphones, Mic, FileText, PenTool, CheckSquare, Upload, FileUp, Eye, EyeOff
 } from 'lucide-react'
 import api from '../../services/api'
-import { supabase } from '../../utils/supabaseClient'
 import Modal from '../../components/common/Modal'
 
 const moduleIcons = {
@@ -48,6 +47,7 @@ export default function QuestionManagement() {
         options: [{ text: '', value: 'A' }, { text: '', value: 'B' }, { text: '', value: 'C' }, { text: '', value: 'D' }],
         correct_answer: 'A',
         explanation: '',
+        is_published: false,  // Add published status
         audio_data: null,  // base64 data URL for listening audio
         pdf_name: null,    // uploaded PDF filename
     })
@@ -72,33 +72,29 @@ export default function QuestionManagement() {
     const fetchQuestions = async () => {
         setLoading(true)
         try {
-            const { data: sbData, error } = await supabase
-                .from('questions')
-                .select('*')
-                .eq('module', activeModule)
-                .order('created_at', { ascending: false })
-
-            if (!error) {
-                // Supabase table exists — use it
-                setUsingLocalStorage(false)
-                const normalized = (sbData || []).map(item => ({
-                    id: item.id,
-                    content: item.content,
-                    difficulty: item.difficulty || 1,
-                    options: item.options,
-                    correct_answer: item.correct_answer,
-                    explanation: item.explanation,
-                    type: ['speaking', 'writing'].includes(activeModule) ? 'prompt' : 'mcq'
-                }))
-                setQuestions(normalized)
-                setLoading(false)
-                return
-            }
-        } catch (_) { /* ignore */ }
-
-        // Supabase table missing — use localStorage
-        setUsingLocalStorage(true)
-        setQuestions(getLocalQuestions())
+            const modulePath = activeModule === 'critical-thinking' ? 'critical_thinking' : activeModule
+            const response = await api.get(`/admin/questions?module=${modulePath}`)
+            const normalized = (response.data.questions || []).map(item => ({
+                id: item.id,
+                module_id: item.module_id,
+                title: item.title,
+                content: item.content,
+                difficulty: item.difficulty || 1,
+                options: item.options,
+                correct_answer: item.correct_answer,
+                explanation: item.explanation,
+                is_published: item.is_published || false,
+                is_active: item.is_active !== false,
+                type: item.options ? 'mcq' : 'prompt'
+            }))
+            setQuestions(normalized)
+            setUsingLocalStorage(false)
+        } catch (err) {
+            console.error('Failed to fetch questions:', err)
+            // Fallback to localStorage if API fails
+            setQuestions(getLocalQuestions())
+            setUsingLocalStorage(true)
+        }
         setLoading(false)
     }
 
@@ -112,6 +108,7 @@ export default function QuestionManagement() {
                 options: question.options || [{ text: '', value: 'A' }, { text: '', value: 'B' }, { text: '', value: 'C' }, { text: '', value: 'D' }],
                 correct_answer: question.correct_answer,
                 explanation: question.explanation || '',
+                is_published: question.is_published || false,
                 audio_data: question.audio_data || null,
                 pdf_name: question.pdf_name || null,
             })
@@ -124,6 +121,7 @@ export default function QuestionManagement() {
                 options: [{ text: '', value: 'A' }, { text: '', value: 'B' }, { text: '', value: 'C' }, { text: '', value: 'D' }],
                 correct_answer: 'A',
                 explanation: '',
+                is_published: false,
                 audio_data: null,
                 pdf_name: null,
             })
@@ -210,71 +208,46 @@ export default function QuestionManagement() {
         setSaveError('')
         setSaveSuccess(false)
 
-        const basePayload = {
-            module: activeModule,
+        const payload = {
+            module_id: null,  // Will be set from active module
             content: formData.content,
+            title: formData.title || null,
             difficulty: formData.difficulty,
             options: ['grammar', 'listening', 'reading'].includes(activeModule) ? formData.options : null,
             correct_answer: ['grammar', 'listening', 'reading'].includes(activeModule) ? formData.correct_answer : null,
             explanation: formData.explanation || null,
-            audio_data: activeModule === 'listening' ? (formData.audio_data || null) : null,
+            is_published: formData.is_published,
+            is_active: true,
         }
 
-        // Extended fields (may not exist in older table schemas)
-        const extendedPayload = {
-            ...basePayload,
-            title: formData.title || null,
-            pdf_name: activeModule === 'reading' ? (formData.pdf_name || null) : null,
-        }
-
-        // Try Supabase (always, even if previously fell back)
-        let savedToSupabase = false
-        let supabaseData = null
-
-        for (const payload of [extendedPayload, basePayload]) {
-            try {
-                if (editingQuestion) {
-                    const { error } = await supabase.from('questions').update(payload).eq('id', editingQuestion.id)
-                    if (error) throw error
-                    setQuestions(prev => prev.map(q => q.id === editingQuestion.id ? { ...q, ...payload } : q))
-                } else {
-                    const { data, error } = await supabase.from('questions').insert(payload).select().single()
-                    if (error) throw error
-                    supabaseData = data
-                    setQuestions(prev => [{ ...data, type: payload.options ? 'mcq' : 'prompt' }, ...prev])
+        try {
+            if (editingQuestion) {
+                // Update existing question
+                await api.put(`/admin/questions/${editingQuestion.id}`, payload)
+                setQuestions(prev => prev.map(q => q.id === editingQuestion.id ? { ...q, ...payload, is_published: formData.is_published } : q))
+            } else {
+                // Create new question - need to get module_id first
+                const moduleResponse = await api.get(`/modules`)
+                const modules = moduleResponse.data.modules || []
+                const moduleSlug = activeModule === 'critical-thinking' ? 'critical-thinking' : activeModule
+                const module = modules.find(m => m.slug === moduleSlug)
+                
+                if (!module) {
+                    setSaveError('Module not found')
+                    setSaving(false)
+                    return
                 }
-                savedToSupabase = true
-                setUsingLocalStorage(false)
-                break   // success — stop retrying
-            } catch (err) {
-                // If first attempt (extended) fails with column error, retry with base
-                const isColumnError = err?.message?.includes('column') || err?.code === '42703' || err?.code === 'PGRST204'
-                if (payload === extendedPayload && isColumnError) continue
-                // For any other error on base payload, stop and fall through to localStorage
-                console.warn('Supabase save failed:', err)
-                break
-            }
-        }
 
-        if (savedToSupabase) {
+                payload.module_id = module.id
+                const response = await api.post(`/admin/questions`, payload)
+                setQuestions(prev => [response.data.question, ...prev])
+            }
             setSaveSuccess(true)
             setTimeout(() => setSaveSuccess(false), 3000)
             handleCloseModal()
-        } else {
-            // localStorage fallback
-            const current = getLocalQuestions()
-            if (editingQuestion) {
-                const updated = current.map(q => q.id === editingQuestion.id ? { ...q, ...extendedPayload } : q)
-                saveLocalQuestions(updated)
-                setQuestions(updated)
-            } else {
-                const newQ = { ...extendedPayload, id: Date.now().toString(), created_at: new Date().toISOString(), type: extendedPayload.options ? 'mcq' : 'prompt' }
-                const updated = [newQ, ...current]
-                saveLocalQuestions(updated)
-                setQuestions(updated)
-            }
-            setUsingLocalStorage(true)
-            handleCloseModal()
+        } catch (err) {
+            console.error('Error saving question:', err)
+            setSaveError('Failed to save question. Please try again.')
         }
 
         setSaving(false)
@@ -291,11 +264,10 @@ export default function QuestionManagement() {
             onConfirm: async () => {
                 setAlertConfig({ isOpen: false })
                 try {
-                    if (!usingLocalStorage) {
-                        const { error } = await supabase.from('questions').delete().eq('id', questionId)
-                        if (error) throw error
-                    }
-                } catch (_) { /* ignore Supabase errors, still remove locally */ }
+                    await api.delete(`/admin/questions/${questionId}`)
+                } catch (err) {
+                    console.error('Failed to delete question:', err)
+                }
                 const updated = questions.filter(q => q.id !== questionId)
                 setQuestions(updated)
                 if (usingLocalStorage) saveLocalQuestions(updated)
@@ -306,6 +278,23 @@ export default function QuestionManagement() {
     const filteredQuestions = questions.filter(q =>
         q.content.toLowerCase().includes(search.toLowerCase())
     )
+
+    const handleTogglePublish = async (question) => {
+        try {
+            const response = await api.put(`/admin/questions/${question.id}/publish`, {
+                is_published: !question.is_published
+            })
+            // Update the question in the list
+            setQuestions(prev => prev.map(q => 
+                q.id === question.id 
+                    ? { ...q, is_published: response.data.question.is_published }
+                    : q
+            ))
+        } catch (err) {
+            console.error('Failed to toggle publish status:', err)
+            showAlert('Error', 'Failed to update publish status')
+        }
+    }
 
     const modules = [
         { key: 'grammar', label: 'Grammar' },
@@ -586,6 +575,22 @@ export default function QuestionManagement() {
                                     )}
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button
+                                        onClick={() => handleTogglePublish(question)}
+                                        title={question.is_published ? 'Unpublish question' : 'Publish question'}
+                                        style={{
+                                            padding: '8px',
+                                            borderRadius: '8px',
+                                            border: question.is_published ? '1px solid #E0E7FF' : '1px solid #E5E7EB',
+                                            backgroundColor: question.is_published ? '#EFF6FF' : 'white',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        {question.is_published ? 
+                                            <Eye size={16} style={{ color: '#3B82F6' }} /> : 
+                                            <EyeOff size={16} style={{ color: '#9CA3AF' }} />
+                                        }
+                                    </button>
                                     <button
                                         onClick={() => handleOpenModal(question)}
                                         style={{
@@ -949,6 +954,38 @@ export default function QuestionManagement() {
                                             fontFamily: 'inherit',
                                         }}
                                     />
+                                </div>
+
+                                <div style={{
+                                    marginBottom: '24px',
+                                    padding: '16px',
+                                    backgroundColor: '#F0FDF4',
+                                    border: '1px solid #BBF7D0',
+                                    borderRadius: '10px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px'
+                                }}>
+                                    <input
+                                        type="checkbox"
+                                        id="is_published"
+                                        checked={formData.is_published}
+                                        onChange={(e) => setFormData(p => ({ ...p, is_published: e.target.checked }))}
+                                        style={{
+                                            width: '18px',
+                                            height: '18px',
+                                            cursor: 'pointer',
+                                        }}
+                                    />
+                                    <label htmlFor="is_published" style={{
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        color: '#166534',
+                                        cursor: 'pointer',
+                                        margin: 0,
+                                    }}>
+                                        Publish to students (visible in learning modules)
+                                    </label>
                                 </div>
 
                                 {saveError && (

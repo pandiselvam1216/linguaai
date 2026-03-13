@@ -15,7 +15,7 @@ listening_bp = Blueprint('listening', __name__)
 @listening_bp.route('/questions', methods=['GET'])
 @jwt_required()
 def get_questions():
-    """Get listening questions"""
+    """Get listening questions - only published questions for student use"""
     difficulty = request.args.get('difficulty', type=int)
     limit = request.args.get('limit', 10, type=int)
     
@@ -23,7 +23,8 @@ def get_questions():
     if not module:
         return jsonify({'error': 'Module not found'}), 404
     
-    query = Question.query.filter_by(module_id=module.id, is_active=True)
+    # Only fetch published and active questions for students
+    query = Question.query.filter_by(module_id=module.id, is_active=True, is_published=True)
     
     if difficulty:
         query = query.filter_by(difficulty=difficulty)

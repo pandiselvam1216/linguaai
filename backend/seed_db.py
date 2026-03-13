@@ -192,7 +192,8 @@ def seed_data():
             for q_data in questions:
                 # Check if exists (by title)
                 if not Question.query.filter_by(title=q_data['title'], module_id=mod_id).first():
-                    q = Question(module_id=mod_id, **q_data)
+                    # Set is_published=True for seed questions so they're visible to students
+                    q = Question(module_id=mod_id, is_published=True, **q_data)
                     db.session.add(q)
         
         add_questions('grammar', grammar_questions)
